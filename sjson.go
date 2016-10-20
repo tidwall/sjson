@@ -280,7 +280,12 @@ func appendRawPaths(buf []byte, jstr string, paths []pathResult, raw string, str
 	}
 	jsres := gjson.Parse(jstr)
 	if jsres.Type != gjson.JSON {
-		return nil, &errorType{"json must be an object or array"}
+		if numeric {
+			jstr = "[]"
+		} else {
+			jstr = "{}"
+		}
+		jsres = gjson.Parse(jstr)
 	}
 	var comma bool
 	for i := 1; i < len(jsres.Raw); i++ {
@@ -310,7 +315,7 @@ func appendRawPaths(buf []byte, jstr string, paths []pathResult, raw string, str
 			if paths[0].part == "-1" && !paths[0].force {
 				appendit = true
 			} else {
-				return nil, &errorType{"array key must be numeric"}
+				return nil, &errorType{"cannot set array element for non-numeric key '" + paths[0].part + "'"}
 			}
 		}
 		if appendit {
