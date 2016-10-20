@@ -45,6 +45,7 @@ const (
 	setInt    = 3
 	setFloat  = 4
 	setString = 5
+	setDelete = 6
 )
 
 func testRaw(t *testing.T, kind int, expect, json, path string, value interface{}) {
@@ -55,6 +56,8 @@ func testRaw(t *testing.T, kind int, expect, json, path string, value interface{
 		json2, err = Set(json, path, value)
 	case setRaw:
 		json2, err = SetRaw(json, path, value.(string))
+	case setDelete:
+		json2, err = Delete(json, path)
 	}
 	if err != nil {
 		t.Fatal(err)
@@ -68,6 +71,8 @@ func testRaw(t *testing.T, kind int, expect, json, path string, value interface{
 		json3, err = SetBytes([]byte(json), path, value)
 	case setRaw:
 		json3, err = SetRawBytes([]byte(json), path, []byte(value.(string)))
+	case setDelete:
+		json3, err = DeleteBytes([]byte(json), path)
 	}
 	if err != nil {
 		t.Fatal(err)
@@ -125,6 +130,18 @@ func TestBasic(t *testing.T) {
 	testRaw(t, setFloat, `[1234.5]`, ``, `0`, float64(1234.5))
 	testRaw(t, setString, `["1234.5"]`, ``, `0`, "1234.5")
 	testRaw(t, setBool, `[true]`, ``, `0`, true)
+	testRaw(t, setBool, `[null]`, ``, `0`, nil)
+}
+
+func TestDelete(t *testing.T) {
+	testRaw(t, setDelete, `[456]`, `[123,456]`, `0`, nil)
+	testRaw(t, setDelete, `[123,789]`, `[123,456,789]`, `1`, nil)
+	testRaw(t, setDelete, `[123,456]`, `[123,456,789]`, `-1`, nil)
+	testRaw(t, setDelete, `{"a":[123,456]}`, `{"a":[123,456,789]}`, `a.-1`, nil)
+	testRaw(t, setDelete, `{"and":"another"}`, `{"this":"that","and":"another"}`, `this`, nil)
+	testRaw(t, setDelete, `{"this":"that"}`, `{"this":"that","and":"another"}`, `and`, nil)
+	testRaw(t, setDelete, `{}`, `{"and":"another"}`, `and`, nil)
+	testRaw(t, setDelete, `{"1":"2"}`, `{"1":"2"}`, `3`, nil)
 }
 
 // TestRandomData is a fuzzing test that throws random data at SetRaw

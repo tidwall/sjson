@@ -163,13 +163,71 @@ func trim(s string) string {
 	return s
 }
 
-func appendRawPaths(buf []byte, jstr string, paths []pathResult, raw string, stringify bool) ([]byte, error) {
+// deleteTailItem deletes the previous key or comma.
+func deleteTailItem(buf []byte) ([]byte, bool) {
+loop:
+	for i := len(buf) - 1; i >= 0; i-- {
+		// look for either a ',',':','['
+		switch buf[i] {
+		case '[':
+			return buf, true
+		case ',':
+			return buf[:i], false
+		case ':':
+			// delete tail string
+			i--
+			for ; i >= 0; i-- {
+				if buf[i] == '"' {
+					i--
+					for ; i >= 0; i-- {
+						if buf[i] == '"' {
+							i--
+							if i >= 0 && i == '\\' {
+								i--
+								continue
+							}
+							for ; i >= 0; i-- {
+								// look for either a ',','{'
+								switch buf[i] {
+								case '{':
+									return buf[:i+1], true
+								case ',':
+									return buf[:i], false
+								}
+							}
+						}
+					}
+					break
+				}
+			}
+			break loop
+		}
+	}
+	return buf, false
+}
+
+var errNoChange = &errorType{"no change"}
+
+func appendRawPaths(buf []byte, jstr string, paths []pathResult, raw string, stringify, del bool) ([]byte, error) {
 	var err error
-	res := gjson.Get(jstr, paths[0].part)
+	var res gjson.Result
+	var found bool
+	if del {
+		if paths[0].part == "-1" && !paths[0].force {
+			res = gjson.Get(jstr, "#")
+			if res.Int() > 0 {
+				res = gjson.Get(jstr, strconv.FormatInt(int64(res.Int()-1), 10))
+				found = true
+			}
+		}
+	}
+	if !found {
+		res = gjson.Get(jstr, paths[0].part)
+	}
 	if res.Index > 0 {
 		if len(paths) > 1 {
 			buf = append(buf, jstr[:res.Index]...)
-			buf, err = appendRawPaths(buf, res.Raw, paths[1:], raw, stringify)
+			buf, err = appendRawPaths(buf, res.Raw, paths[1:], raw, stringify, del)
 			if err != nil {
 				return nil, err
 			}
@@ -177,13 +235,33 @@ func appendRawPaths(buf []byte, jstr string, paths []pathResult, raw string, str
 			return buf, nil
 		}
 		buf = append(buf, jstr[:res.Index]...)
-		if stringify {
-			buf = appendStringify(buf, raw)
+		var exidx int // addional forward stripping
+		if del {
+			var delNextComma bool
+			buf, delNextComma = deleteTailItem(buf)
+			if delNextComma {
+				for i, j := res.Index+len(res.Raw), 0; i < len(jstr); i, j = i+1, j+1 {
+					if jstr[i] <= ' ' {
+						continue
+					}
+					if jstr[i] == ',' {
+						exidx = j + 1
+					}
+					break
+				}
+			}
 		} else {
-			buf = append(buf, raw...)
+			if stringify {
+				buf = appendStringify(buf, raw)
+			} else {
+				buf = append(buf, raw...)
+			}
 		}
-		buf = append(buf, jstr[res.Index+len(res.Raw):]...)
+		buf = append(buf, jstr[res.Index+len(res.Raw)+exidx:]...)
 		return buf, nil
+	}
+	if del {
+		return nil, errNoChange
 	}
 	n, numeric := atoui(paths[0])
 	isempty := true
@@ -271,7 +349,7 @@ func appendRawPaths(buf []byte, jstr string, paths []pathResult, raw string, str
 	}
 }
 
-func set(jstr, path, raw string, stringify bool) ([]byte, error) {
+func set(jstr, path, raw string, stringify, del bool) ([]byte, error) {
 	// parse the path, make sure that it does not contain invalid characters
 	// such as '#', '?', '*'
 	if path == "" {
@@ -290,7 +368,7 @@ func set(jstr, path, raw string, stringify bool) ([]byte, error) {
 		paths = append(paths, r)
 	}
 
-	njson, err := appendRawPaths(nil, jstr, paths, raw, stringify)
+	njson, err := appendRawPaths(nil, jstr, paths, raw, stringify, del)
 	if err != nil {
 		return nil, err
 	}
@@ -326,11 +404,26 @@ func Set(json, path string, value interface{}) (string, error) {
 	return string(res), err
 }
 
+type dtype struct{}
+
+// Delete deletes a value from json for the specified path.
+func Delete(json, path string) (string, error) {
+	return Set(json, path, dtype{})
+}
+
+// DeleteBytes deletes a value from json for the specified path.
+func DeleteBytes(json []byte, path string) ([]byte, error) {
+	return SetBytes(json, path, dtype{})
+}
+
 // SetRaw sets a raw json value for the specified path. The works the same as
 // Set except that the value is set as a raw block of json. This allows for setting
 // premarshalled json objects.
 func SetRaw(json, path, value string) (string, error) {
-	res, err := set(json, path, value, false)
+	res, err := set(json, path, value, false, false)
+	if err == errNoChange {
+		return json, nil
+	}
 	return string(res), err
 }
 
@@ -339,7 +432,11 @@ func SetRaw(json, path, value string) (string, error) {
 func SetRawBytes(json []byte, path string, value []byte) ([]byte, error) {
 	jstr := *(*string)(unsafe.Pointer(&json))
 	vstr := *(*string)(unsafe.Pointer(&value))
-	return set(jstr, path, vstr, false)
+	res, err := set(jstr, path, vstr, false, false)
+	if err == errNoChange {
+		return json, nil
+	}
+	return res, nil
 }
 
 // SetBytes sets a json value for the specified path.
@@ -355,38 +452,43 @@ func SetBytes(json []byte, path string, value interface{}) ([]byte, error) {
 			return nil, err
 		}
 		raw := *(*string)(unsafe.Pointer(&b))
-		res, err = set(jstr, path, raw, false)
+		res, err = set(jstr, path, raw, false, false)
+	case dtype:
+		res, err = set(jstr, path, "", false, true)
 	case string:
-		res, err = set(jstr, path, v, true)
+		res, err = set(jstr, path, v, true, false)
 	case []byte:
 		raw := *(*string)(unsafe.Pointer(&v))
-		res, err = set(jstr, path, raw, true)
+		res, err = set(jstr, path, raw, true, false)
 	case bool:
 		if v {
-			res, err = set(jstr, path, "true", false)
+			res, err = set(jstr, path, "true", false, false)
 		} else {
-			res, err = set(jstr, path, "false", false)
+			res, err = set(jstr, path, "false", false, false)
 		}
 	case int8:
-		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10), false)
+		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10), false, false)
 	case int16:
-		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10), false)
+		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10), false, false)
 	case int32:
-		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10), false)
+		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10), false, false)
 	case int64:
-		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10), false)
+		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10), false, false)
 	case uint8:
-		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10), false)
+		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10), false, false)
 	case uint16:
-		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10), false)
+		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10), false, false)
 	case uint32:
-		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10), false)
+		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10), false, false)
 	case uint64:
-		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10), false)
+		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10), false, false)
 	case float32:
-		res, err = set(jstr, path, strconv.FormatFloat(float64(v), 'f', -1, 64), false)
+		res, err = set(jstr, path, strconv.FormatFloat(float64(v), 'f', -1, 64), false, false)
 	case float64:
-		res, err = set(jstr, path, strconv.FormatFloat(float64(v), 'f', -1, 64), false)
+		res, err = set(jstr, path, strconv.FormatFloat(float64(v), 'f', -1, 64), false, false)
+	}
+	if err == errNoChange {
+		return json, nil
 	}
 	return res, err
 }

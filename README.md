@@ -184,6 +184,33 @@ println(value)
 // {"friends":["Andy","Carol",null,null,"Sara"]
 ```
 
+Delete a value:
+```go
+value, _ := sjson.Delete(`{"name":{"first":"Sara","last":"Anderson"}}`, "name.first")
+println(value)
+
+// Output:
+// {"name":{"last":"Anderson"}}
+```
+
+Delete an array value:
+```go
+value, _ := sjson.Delete(`{"friends":["Andy","Carol"]}`, "friends.1")
+println(value)
+
+// Output:
+// {"friends":["Andy"]}
+```
+
+Delete the last array value:
+```go
+value, _ := sjson.Delete(`{"friends":["Andy","Carol"]}`, "friends.-1")
+println(value)
+
+// Output:
+// {"friends":["Andy"]}
+```
+
 ## Contact
 Josh Baker [@tidwall](http://twitter.com/tidwall)
 
