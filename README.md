@@ -7,9 +7,9 @@
 <a href="https://godoc.org/github.com/tidwall/sjson"><img src="https://img.shields.io/badge/api-reference-blue.svg?style=flat-square" alt="GoDoc"></a>
 </p>
 
-<p align="center">set a json value quickly</a></p>
+<p align="center">set a json value quickly</p>
 
-SJSON is a Go package the provides a very fast and simple way to set a value in a json document. The reason for this library it to provide efficient json updating for the [SummitDB](https://github.com/tidwall/summitdb) project. 
+SJSON is a Go package which provides a very fast and simple way to set a value in a json document. The purpose of this library is to provide an efficient json updating for the [SummitDB](https://github.com/tidwall/summitdb) project. 
 For quickly retrieving json values check out [GJSON](https://github.com/tidwall/gjson).
 
 Getting Started
@@ -18,19 +18,19 @@ Getting Started
 Installing
 ----------
 
-To start using SJSON, install Go and run `go get`:
+The only requirement is the [Go Programming Language](https://golang.org/dl/).
 
 ```sh
 $ go get -u github.com/tidwall/sjson
 ```
 
-This will retrieve the library.
+And you're ready to go!
 
 Set a value
 -----------
-Set sets the value for the specified path. 
-A path is in dot syntax, such as "name.last" or "age". 
-This function expects that the json is well-formed and validates. 
+Set sets a value for a specified path. 
+A path is in dot syntax, e.g "name.last" or "age". 
+This function expects that the json is well-formed and validated. 
 Invalid json will not panic, but it may return back unexpected results.
 Invalid paths may return an error.
 
