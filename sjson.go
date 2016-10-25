@@ -409,41 +409,6 @@ func Set(json, path string, value interface{}) (string, error) {
 	return string(res), err
 }
 
-type dtype struct{}
-
-// Delete deletes a value from json for the specified path.
-func Delete(json, path string) (string, error) {
-	return Set(json, path, dtype{})
-}
-
-// DeleteBytes deletes a value from json for the specified path.
-func DeleteBytes(json []byte, path string) ([]byte, error) {
-	return SetBytes(json, path, dtype{})
-}
-
-// SetRaw sets a raw json value for the specified path. The works the same as
-// Set except that the value is set as a raw block of json. This allows for setting
-// premarshalled json objects.
-func SetRaw(json, path, value string) (string, error) {
-	res, err := set(json, path, value, false, false)
-	if err == errNoChange {
-		return json, nil
-	}
-	return string(res), err
-}
-
-// SetRawBytes sets a raw json value for the specified path.
-// If working with bytes, this method preferred over SetRaw(string(data), path, value)
-func SetRawBytes(json []byte, path string, value []byte) ([]byte, error) {
-	jstr := *(*string)(unsafe.Pointer(&json))
-	vstr := *(*string)(unsafe.Pointer(&value))
-	res, err := set(jstr, path, vstr, false, false)
-	if err == errNoChange {
-		return json, nil
-	}
-	return res, nil
-}
-
 // SetBytes sets a json value for the specified path.
 // If working with bytes, this method preferred over Set(string(data), path, value)
 func SetBytes(json []byte, path string, value interface{}) ([]byte, error) {
@@ -496,4 +461,39 @@ func SetBytes(json []byte, path string, value interface{}) ([]byte, error) {
 		return json, nil
 	}
 	return res, err
+}
+
+// SetRaw sets a raw json value for the specified path. The works the same as
+// Set except that the value is set as a raw block of json. This allows for setting
+// premarshalled json objects.
+func SetRaw(json, path, value string) (string, error) {
+	res, err := set(json, path, value, false, false)
+	if err == errNoChange {
+		return json, nil
+	}
+	return string(res), err
+}
+
+// SetRawBytes sets a raw json value for the specified path.
+// If working with bytes, this method preferred over SetRaw(string(data), path, value)
+func SetRawBytes(json []byte, path string, value []byte) ([]byte, error) {
+	jstr := *(*string)(unsafe.Pointer(&json))
+	vstr := *(*string)(unsafe.Pointer(&value))
+	res, err := set(jstr, path, vstr, false, false)
+	if err == errNoChange {
+		return json, nil
+	}
+	return res, nil
+}
+
+type dtype struct{}
+
+// Delete deletes a value from json for the specified path.
+func Delete(json, path string) (string, error) {
+	return Set(json, path, dtype{})
+}
+
+// DeleteBytes deletes a value from json for the specified path.
+func DeleteBytes(json []byte, path string) ([]byte, error) {
+	return SetBytes(json, path, dtype{})
 }
