@@ -18,6 +18,13 @@ func (err *errorType) Error() string {
 	return err.msg
 }
 
+// Options represents addtional options for the Set and Delete functions.
+type Options struct {
+	// Optimistic is a hint that the value likely exists which
+	// allows for the sjson to perform a fast-track search and replace.
+	Optimistic bool
+}
+
 type pathResult struct {
 	part  string // current key part
 	path  string // remaining path
@@ -354,12 +361,45 @@ func appendRawPaths(buf []byte, jstr string, paths []pathResult, raw string, str
 	}
 }
 
-func set(jstr, path, raw string, stringify, del bool) ([]byte, error) {
-	// parse the path, make sure that it does not contain invalid characters
-	// such as '#', '?', '*'
+func isOptimisticPath(path string) bool {
+	for i := 0; i < len(path); i++ {
+		if path[i] < '.' || path[i] > 'z' {
+			return false
+		}
+		if path[i] > '9' && path[i] < 'A' {
+			return false
+		}
+		if path[i] > 'z' {
+			return false
+		}
+	}
+	return true
+}
+
+func set(jstr, path, raw string, stringify, del, optimistic bool) ([]byte, error) {
 	if path == "" {
 		return nil, &errorType{"path cannot be empty"}
 	}
+	if !del && optimistic && isOptimisticPath(path) {
+		res := gjson.Get(jstr, path)
+		if res.Exists() && res.Index > 0 {
+			sz := len(jstr) - len(res.Raw) + len(raw)
+			if stringify {
+				sz += 2
+			}
+			buf := make([]byte, 0, sz)
+			buf = append(buf, jstr[:res.Index]...)
+			if stringify {
+				buf = appendStringify(buf, raw)
+			} else {
+				buf = append(buf, raw...)
+			}
+			buf = append(buf, jstr[res.Index+len(res.Raw):]...)
+			return buf, nil
+		}
+	}
+	// parse the path, make sure that it does not contain invalid characters
+	// such as '#', '?', '*'
 	paths := make([]pathResult, 0, 4)
 	r, err := parsePath(path)
 	if err != nil {
@@ -402,16 +442,39 @@ func set(jstr, path, raw string, stringify, del bool) ([]byte, error) {
 //  "children.1"         >> "Alex"
 //
 func Set(json, path string, value interface{}) (string, error) {
+	return SetOptions(json, path, value, nil)
+}
+
+// SetOptions sets a json value for the specified path with options.
+// A path is in dot syntax, such as "name.last" or "age".
+// This function expects that the json is well-formed, and does not validate.
+// Invalid json will not panic, but it may return back unexpected results.
+// An error is returned if the path is not valid.
+func SetOptions(json, path string, value interface{},
+	opts *Options) (string, error) {
 	jsonh := *(*reflect.StringHeader)(unsafe.Pointer(&json))
 	jsonbh := reflect.SliceHeader{Data: jsonh.Data, Len: jsonh.Len}
 	jsonb := *(*[]byte)(unsafe.Pointer(&jsonbh))
-	res, err := SetBytes(jsonb, path, value)
+	res, err := SetBytesOptions(jsonb, path, value, opts)
 	return string(res), err
 }
 
 // SetBytes sets a json value for the specified path.
-// If working with bytes, this method preferred over Set(string(data), path, value)
+// If working with bytes, this method preferred over
+// Set(string(data), path, value)
 func SetBytes(json []byte, path string, value interface{}) ([]byte, error) {
+	return SetBytesOptions(json, path, value, nil)
+}
+
+// SetBytesOptions sets a json value for the specified path with options.
+// If working with bytes, this method preferred over
+// SetOptions(string(data), path, value)
+func SetBytesOptions(json []byte, path string, value interface{},
+	opts *Options) ([]byte, error) {
+	var optimistic bool
+	if opts != nil {
+		optimistic = opts.Optimistic
+	}
 	jstr := *(*string)(unsafe.Pointer(&json))
 	var res []byte
 	var err error
@@ -422,40 +485,50 @@ func SetBytes(json []byte, path string, value interface{}) ([]byte, error) {
 			return nil, err
 		}
 		raw := *(*string)(unsafe.Pointer(&b))
-		res, err = set(jstr, path, raw, false, false)
+		res, err = set(jstr, path, raw, false, false, optimistic)
 	case dtype:
-		res, err = set(jstr, path, "", false, true)
+		res, err = set(jstr, path, "", false, true, optimistic)
 	case string:
-		res, err = set(jstr, path, v, true, false)
+		res, err = set(jstr, path, v, true, false, optimistic)
 	case []byte:
 		raw := *(*string)(unsafe.Pointer(&v))
-		res, err = set(jstr, path, raw, true, false)
+		res, err = set(jstr, path, raw, true, false, optimistic)
 	case bool:
 		if v {
-			res, err = set(jstr, path, "true", false, false)
+			res, err = set(jstr, path, "true", false, false, optimistic)
 		} else {
-			res, err = set(jstr, path, "false", false, false)
+			res, err = set(jstr, path, "false", false, false, optimistic)
 		}
 	case int8:
-		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10), false, false)
+		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10),
+			false, false, optimistic)
 	case int16:
-		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10), false, false)
+		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10),
+			false, false, optimistic)
 	case int32:
-		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10), false, false)
+		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10),
+			false, false, optimistic)
 	case int64:
-		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10), false, false)
+		res, err = set(jstr, path, strconv.FormatInt(int64(v), 10),
+			false, false, optimistic)
 	case uint8:
-		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10), false, false)
+		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10),
+			false, false, optimistic)
 	case uint16:
-		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10), false, false)
+		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10),
+			false, false, optimistic)
 	case uint32:
-		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10), false, false)
+		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10),
+			false, false, optimistic)
 	case uint64:
-		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10), false, false)
+		res, err = set(jstr, path, strconv.FormatUint(uint64(v), 10),
+			false, false, optimistic)
 	case float32:
-		res, err = set(jstr, path, strconv.FormatFloat(float64(v), 'f', -1, 64), false, false)
+		res, err = set(jstr, path, strconv.FormatFloat(float64(v), 'f', -1, 64),
+			false, false, optimistic)
 	case float64:
-		res, err = set(jstr, path, strconv.FormatFloat(float64(v), 'f', -1, 64), false, false)
+		res, err = set(jstr, path, strconv.FormatFloat(float64(v), 'f', -1, 64),
+			false, false, optimistic)
 	}
 	if err == errNoChange {
 		return json, nil
@@ -463,11 +536,22 @@ func SetBytes(json []byte, path string, value interface{}) ([]byte, error) {
 	return res, err
 }
 
-// SetRaw sets a raw json value for the specified path. The works the same as
-// Set except that the value is set as a raw block of json. This allows for setting
-// premarshalled json objects.
+// SetRaw sets a raw json value for the specified path.
+// This function works the same as Set except that the value is set as a
+// raw block of json. This allows for setting premarshalled json objects.
 func SetRaw(json, path, value string) (string, error) {
-	res, err := set(json, path, value, false, false)
+	return SetRawOptions(json, path, value, nil)
+}
+
+// SetRawOptions sets a raw json value for the specified path with options.
+// This furnction works the same as SetOptions except that the value is set
+// as a raw block of json. This allows for setting premarshalled json objects.
+func SetRawOptions(json, path, value string, opts *Options) (string, error) {
+	var optimistic bool
+	if opts != nil {
+		optimistic = opts.Optimistic
+	}
+	res, err := set(json, path, value, false, false, optimistic)
 	if err == errNoChange {
 		return json, nil
 	}
@@ -475,11 +559,24 @@ func SetRaw(json, path, value string) (string, error) {
 }
 
 // SetRawBytes sets a raw json value for the specified path.
-// If working with bytes, this method preferred over SetRaw(string(data), path, value)
+// If working with bytes, this method preferred over
+// SetRaw(string(data), path, value)
 func SetRawBytes(json []byte, path string, value []byte) ([]byte, error) {
+	return SetRawBytesOptions(json, path, value, nil)
+}
+
+// SetRawBytesOptions sets a raw json value for the specified path with options.
+// If working with bytes, this method preferred over
+// SetRawOptions(string(data), path, value, opts)
+func SetRawBytesOptions(json []byte, path string, value []byte,
+	opts *Options) ([]byte, error) {
 	jstr := *(*string)(unsafe.Pointer(&json))
 	vstr := *(*string)(unsafe.Pointer(&value))
-	res, err := set(jstr, path, vstr, false, false)
+	var optimistic bool
+	if opts != nil {
+		optimistic = opts.Optimistic
+	}
+	res, err := set(jstr, path, vstr, false, false, optimistic)
 	if err == errNoChange {
 		return json, nil
 	}
