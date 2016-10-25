@@ -180,7 +180,7 @@ var json = `
       },
       "committer": {
         "name": "Tom Tom Anderson",
-        "email": "jeff@anderson.edu",
+        "email": "jeffditto@anderson.edu",
         "date": "2013-06-22T16:30:59Z"
       },
       "message": "Merge pull request #162 from stedolan/utf8-fixes\n\nUtf8 fixes. Closes #161",
@@ -197,10 +197,12 @@ var path = "commit.committer.email"
 var value = "tomtom@anderson.com"
 var rawValue = `"tomtom@anderson.com"`
 var rawValueBytes = []byte(rawValue)
-var expect = strings.Replace(json, "jeff@anderson.edu", "tomtom@anderson.com", 1)
+var expect = strings.Replace(json, "jeffditto@anderson.edu", "tomtom@anderson.com", 1)
 var jsonBytes = []byte(json)
+var jsonBytes2 = []byte(json)
 var expectBytes = []byte(expect)
 var opts = &Options{Optimistic: true}
+var optsInPlace = &Options{Optimistic: true, ReplaceInPlace: true}
 
 func BenchmarkSet(t *testing.B) {
 	t.ReportAllocs()
@@ -253,10 +255,24 @@ func BenchmarkSetRawBytes(t *testing.B) {
 		}
 	}
 }
+
 func BenchmarkSetOptimistic(t *testing.B) {
 	t.ReportAllocs()
 	for i := 0; i < t.N; i++ {
 		res, err := SetOptions(json, path, value, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res != expect {
+			t.Fatal("expected '%v', got '%v'", expect, res)
+		}
+	}
+}
+
+func BenchmarkSetInPlace(t *testing.B) {
+	t.ReportAllocs()
+	for i := 0; i < t.N; i++ {
+		res, err := SetOptions(json, path, value, optsInPlace)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -278,6 +294,20 @@ func BenchmarkSetRawOptimistic(t *testing.B) {
 		}
 	}
 }
+
+func BenchmarkSetRawInPlace(t *testing.B) {
+	t.ReportAllocs()
+	for i := 0; i < t.N; i++ {
+		res, err := SetRawOptions(json, path, rawValue, optsInPlace)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res != expect {
+			t.Fatal("expected '%v', got '%v'", expect, res)
+		}
+	}
+}
+
 func BenchmarkSetBytesOptimistic(t *testing.B) {
 	t.ReportAllocs()
 	for i := 0; i < t.N; i++ {
@@ -291,10 +321,38 @@ func BenchmarkSetBytesOptimistic(t *testing.B) {
 	}
 }
 
+func BenchmarkSetBytesInPlace(t *testing.B) {
+	t.ReportAllocs()
+	for i := 0; i < t.N; i++ {
+		copy(jsonBytes2, jsonBytes)
+		res, err := SetBytesOptions(jsonBytes2, path, value, optsInPlace)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if bytes.Compare(res, expectBytes) != 0 {
+			t.Fatal("expected '%v', got '%v'", string(expectBytes), string(res))
+		}
+	}
+}
+
 func BenchmarkSetRawBytesOptimistic(t *testing.B) {
 	t.ReportAllocs()
 	for i := 0; i < t.N; i++ {
 		res, err := SetRawBytesOptions(jsonBytes, path, rawValueBytes, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if bytes.Compare(res, expectBytes) != 0 {
+			t.Fatal("expected '%v', got '%v'", string(expectBytes), string(res))
+		}
+	}
+}
+
+func BenchmarkSetRawBytesInPlace(t *testing.B) {
+	t.ReportAllocs()
+	for i := 0; i < t.N; i++ {
+		copy(jsonBytes2, jsonBytes)
+		res, err := SetRawBytesOptions(jsonBytes2, path, rawValueBytes, optsInPlace)
 		if err != nil {
 			t.Fatal(err)
 		}
