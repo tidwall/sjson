@@ -18,7 +18,7 @@ func (err *errorType) Error() string {
 	return err.msg
 }
 
-// Options represents addtional options for the Set and Delete functions.
+// Options represents additional options for the Set and Delete functions.
 type Options struct {
 	// Optimistic is a hint that the value likely exists which
 	// allows for the sjson to perform a fast-track search and replace.
@@ -26,7 +26,9 @@ type Options struct {
 	// ReplaceInPlace is a hint to replace the input json rather than
 	// allocate a new json byte slice. When this field is specified
 	// the input json will not longer be valid and it should not be used
-	// There is no guarentees that the memory will be replaced in-place.
+	// In the case when the destination slice doesn't have enough free
+	// bytes to replace the data in place, a new bytes slice will be
+	// created under the hood.
 	// The Optimistic flag must be set to true and the input must be a
 	// byte slice in order to use this field.
 	ReplaceInPlace bool
@@ -261,7 +263,7 @@ func appendRawPaths(buf []byte, jstr string, paths []pathResult, raw string,
 			return buf, nil
 		}
 		buf = append(buf, jstr[:res.Index]...)
-		var exidx int // addional forward stripping
+		var exidx int // additional forward stripping
 		if del {
 			var delNextComma bool
 			buf, delNextComma = deleteTailItem(buf)
@@ -470,7 +472,7 @@ func set(jstr, path, raw string,
 // Invalid json will not panic, but it may return back unexpected results.
 // An error is returned if the path is not valid.
 //
-// A path is a series of keys seperated by a dot.
+// A path is a series of keys separated by a dot.
 //
 //  {
 //    "name": {"first": "Tom", "last": "Anderson"},
