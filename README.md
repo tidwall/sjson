@@ -213,6 +213,63 @@ println(value)
 // {"friends":["Andy"]}
 ```
 
+## Performance
+
+Benchmarks of SJSON alongside [encoding/json](https://golang.org/pkg/encoding/json/), 
+[ffjson](https://github.com/pquerna/ffjson), 
+[EasyJSON](https://github.com/mailru/easyjson),
+and [Gabs](https://github.com/Jeffail/gabs)
+
+```
+Benchmark_SJSON-8                  	 3000000	       805 ns/op	    1077 B/op	       3 allocs/op
+Benchmark_SJSON_ReplaceInPlace-8   	 3000000	       449 ns/op	       0 B/op	       0 allocs/op
+Benchmark_JSON_Map-8               	  300000	     21236 ns/op	    6392 B/op	     150 allocs/op
+Benchmark_JSON_Struct-8            	  300000	     14691 ns/op	    1789 B/op	      24 allocs/op
+Benchmark_Gabs-8                   	  300000	     21311 ns/op	    6752 B/op	     150 allocs/op
+Benchmark_FFJSON-8                 	  300000	     17673 ns/op	    3589 B/op	      47 allocs/op
+Benchmark_EasyJSON-8               	 1500000	      3119 ns/op	    1061 B/op	      13 allocs/op
+```
+
+JSON document used:
+
+```json
+{
+  "widget": {
+    "debug": "on",
+    "window": {
+      "title": "Sample Konfabulator Widget",
+      "name": "main_window",
+      "width": 500,
+      "height": 500
+    },
+    "image": { 
+      "src": "Images/Sun.png",
+      "hOffset": 250,
+      "vOffset": 250,
+      "alignment": "center"
+    },
+    "text": {
+      "data": "Click Here",
+      "size": 36,
+      "style": "bold",
+      "vOffset": 100,
+      "alignment": "center",
+      "onMouseUp": "sun1.opacity = (sun1.opacity / 100) * 90;"
+    }
+  }
+}    
+```
+
+Each operation was rotated though one of the following search paths:
+
+```
+widget.window.name
+widget.image.hOffset
+widget.text.onMouseUp
+```
+
+*These benchmarks were run on a MacBook Pro 15" 2.8 GHz Intel Core i7 using Go 1.7.*
+
 ## Contact
 Josh Baker [@tidwall](http://twitter.com/tidwall)
 
