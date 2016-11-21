@@ -156,7 +156,7 @@ value, _ := sjson.Set(`{"name":{"last":"Anderson"}}`, "name.last", "Smith")
 println(value)
 
 // Output:
-// {"name":{"first":"Sara","last":"Smith"}}
+// {"name":{"last":"Smith"}}
 ```
 
 Set a new array value:
