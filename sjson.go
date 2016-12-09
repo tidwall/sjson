@@ -637,7 +637,7 @@ func SetRawBytesOptions(json []byte, path string, value []byte,
 	if err == errNoChange {
 		return json, nil
 	}
-	return res, nil
+	return res, err
 }
 
 type dtype struct{}
