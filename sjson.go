@@ -128,7 +128,7 @@ func appendBuild(buf []byte, array bool, paths []pathResult, raw string,
 	}
 	if len(paths) > 1 {
 		n, numeric := atoui(paths[1])
-		if numeric {
+		if numeric || (!paths[1].force && paths[1].part == "-1") {
 			buf = append(buf, '[')
 			buf = appendRepeat(buf, "null,", n)
 			buf = appendBuild(buf, true, paths[1:], raw, stringify)
