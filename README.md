@@ -7,7 +7,7 @@
 <a href="https://godoc.org/github.com/tidwall/sjson"><img src="https://img.shields.io/badge/api-reference-blue.svg?style=flat-square" alt="GoDoc"></a>
 </p>
 
-<p align="center">set a json value quickly</a></p>
+<p align="center">set a json value quickly</p>
 
 SJSON is a Go package that provides a [very fast](#performance) and simple way to set a value in a json document. The purpose for this library is to provide efficient json updating for the [SummitDB](https://github.com/tidwall/summitdb) project. 
 For quickly retrieving json values check out [GJSON](https://github.com/tidwall/gjson).
