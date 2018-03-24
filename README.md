@@ -59,7 +59,7 @@ Path syntax
 -----------
 
 A path is a series of keys separated by a dot.
-The dot and colon characters can be escaped with '\'.
+The dot and colon characters can be escaped with ``\``.
 
 ```json
 {
@@ -78,6 +78,7 @@ The dot and colon characters can be escaped with '\'.
 "age"                >> 37
 "children.1"         >> "Alex"
 "friends.1.last"     >> "Craig"
+"fav\\.movie"        >> "Deer Hunter"
 ```
 
 The `-1` key can be used to append a value to an existing array:

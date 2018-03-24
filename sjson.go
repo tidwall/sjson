@@ -36,6 +36,7 @@ type Options struct {
 
 type pathResult struct {
 	part  string // current key part
+	partRaw  string // current key raw part
 	path  string // remaining path
 	force bool   // force a string key
 	more  bool   // there is more path to parse
@@ -50,6 +51,7 @@ func parsePath(path string) (pathResult, error) {
 	for i := 0; i < len(path); i++ {
 		if path[i] == '.' {
 			r.part = path[:i]
+			r.partRaw=r.part
 			r.path = path[i+1:]
 			r.more = true
 			return r, nil
@@ -63,19 +65,23 @@ func parsePath(path string) (pathResult, error) {
 			// go into escape mode. this is a slower path that
 			// strips off the escape character from the part.
 			epart := []byte(path[:i])
+			epartRaw := []byte(path[:i+1])
 			i++
 			if i < len(path) {
 				epart = append(epart, path[i])
+				epartRaw = append(epartRaw, path[i])
 				i++
 				for ; i < len(path); i++ {
 					if path[i] == '\\' {
 						i++
 						if i < len(path) {
 							epart = append(epart, path[i])
+							epartRaw = append(epartRaw, path[i-1],path[i])
 						}
 						continue
 					} else if path[i] == '.' {
 						r.part = string(epart)
+						r.partRaw = string(epartRaw)
 						r.path = path[i+1:]
 						r.more = true
 						return r, nil
@@ -87,14 +93,17 @@ func parsePath(path string) (pathResult, error) {
 							"array access character not allowed in path"}
 					}
 					epart = append(epart, path[i])
+					epartRaw = append(epartRaw, path[i])
 				}
 			}
 			// append the last part
 			r.part = string(epart)
+			r.partRaw = string(epartRaw)
 			return r, nil
 		}
 	}
 	r.part = path
+	r.partRaw=r.part
 	return r, nil
 }
 
@@ -249,7 +258,7 @@ func appendRawPaths(buf []byte, jstr string, paths []pathResult, raw string,
 		}
 	}
 	if !found {
-		res = gjson.Get(jstr, paths[0].part)
+		res = gjson.Get(jstr, paths[0].partRaw)
 	}
 	if res.Index > 0 {
 		if len(paths) > 1 {
