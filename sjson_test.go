@@ -90,7 +90,9 @@ func testRaw(t *testing.T, kind int, expect, json, path string, value interface{
 		t.Fatalf("expected '%v', got '%v'", expect, string(json3))
 	}
 }
+
 func TestBasic(t *testing.T) {
+
 	testRaw(t, setRaw, `[{"hiw":"planet","hi":"world"}]`, `[{"hi":"world"}]`, "0.hiw", `"planet"`)
 	testRaw(t, setRaw, `[true]`, ``, "0", `true`)
 	testRaw(t, setRaw, `[null,true]`, ``, "1", `true`)
@@ -142,6 +144,10 @@ func TestBasic(t *testing.T) {
 	testRaw(t, setBool, `[true]`, ``, `0`, true)
 	testRaw(t, setBool, `[null]`, ``, `0`, nil)
 	testRaw(t, setString, `{"arr":[1]}`, ``, `arr.-1`, 1)
+	testRaw(t, setRaw, `{"app.token":"cde"}`, `{"app.token":"abc"}`, "app\\.token", `"cde"`)
+	testRaw(t, setRaw, `{"a.b.c":"cde"}`, `{"a.b.c":"abc"}`, "a\\.b\\.c", `"cde"`)
+	testRaw(t, setString, `{"app.token":"cde"}`, `{"app.token":"abc"}`, "app\\.token", "cde")
+	testRaw(t, setString, `{"a.b.c":"cde"}`, `{"a.b.c":"abc"}`, "a\\.b\\.c", "cde")
 }
 
 func TestDelete(t *testing.T) {
@@ -221,7 +227,7 @@ func BenchmarkSet(t *testing.B) {
 			t.Fatal(err)
 		}
 		if res != expect {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -234,7 +240,7 @@ func BenchmarkSetRaw(t *testing.B) {
 			t.Fatal(err)
 		}
 		if res != expect {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -247,7 +253,7 @@ func BenchmarkSetBytes(t *testing.B) {
 			t.Fatal(err)
 		}
 		if bytes.Compare(res, expectBytes) != 0 {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -260,7 +266,7 @@ func BenchmarkSetRawBytes(t *testing.B) {
 			t.Fatal(err)
 		}
 		if bytes.Compare(res, expectBytes) != 0 {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -273,7 +279,7 @@ func BenchmarkSetOptimistic(t *testing.B) {
 			t.Fatal(err)
 		}
 		if res != expect {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -286,7 +292,7 @@ func BenchmarkSetInPlace(t *testing.B) {
 			t.Fatal(err)
 		}
 		if res != expect {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -299,7 +305,7 @@ func BenchmarkSetRawOptimistic(t *testing.B) {
 			t.Fatal(err)
 		}
 		if res != expect {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -312,7 +318,7 @@ func BenchmarkSetRawInPlace(t *testing.B) {
 			t.Fatal(err)
 		}
 		if res != expect {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -325,7 +331,7 @@ func BenchmarkSetBytesOptimistic(t *testing.B) {
 			t.Fatal(err)
 		}
 		if bytes.Compare(res, expectBytes) != 0 {
-			t.Fatal("expected '%v', got '%v'", string(expectBytes), string(res))
+			t.Fatalf("expected '%v', got '%v'", string(expectBytes), string(res))
 		}
 	}
 }
@@ -339,7 +345,7 @@ func BenchmarkSetBytesInPlace(t *testing.B) {
 			t.Fatal(err)
 		}
 		if bytes.Compare(res, expectBytes) != 0 {
-			t.Fatal("expected '%v', got '%v'", string(expectBytes), string(res))
+			t.Fatalf("expected '%v', got '%v'", string(expectBytes), string(res))
 		}
 	}
 }
@@ -352,7 +358,7 @@ func BenchmarkSetRawBytesOptimistic(t *testing.B) {
 			t.Fatal(err)
 		}
 		if bytes.Compare(res, expectBytes) != 0 {
-			t.Fatal("expected '%v', got '%v'", string(expectBytes), string(res))
+			t.Fatalf("expected '%v', got '%v'", string(expectBytes), string(res))
 		}
 	}
 }
@@ -366,7 +372,7 @@ func BenchmarkSetRawBytesInPlace(t *testing.B) {
 			t.Fatal(err)
 		}
 		if bytes.Compare(res, expectBytes) != 0 {
-			t.Fatal("expected '%v', got '%v'", string(expectBytes), string(res))
+			t.Fatalf("expected '%v', got '%v'", string(expectBytes), string(res))
 		}
 	}
 }
@@ -381,7 +387,7 @@ const benchJSON = `
       "width": 500,
       "height": 500
     },
-    "image": { 
+    "image": {
       "src": "Images/Sun.png",
       "hOffset": 250,
       "vOffset": 250,
@@ -396,7 +402,7 @@ const benchJSON = `
       "onMouseUp": "sun1.opacity = (sun1.opacity / 100) * 90;"
     }
   }
-}    
+}
 `
 
 type BenchStruct struct {
@@ -664,28 +670,29 @@ func easyjsonDbb23193EncodeGithubComTidwallSjson(out *jwriter.Writer, in BenchSt
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v BenchStruct) MarshalEasyJSONFromData() ([]byte, error) {
+func (bs BenchStruct) MarshalEasyJSONFromData() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonDbb23193EncodeGithubComTidwallSjson(&w, v)
+	easyjsonDbb23193EncodeGithubComTidwallSjson(&w, bs)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v BenchStruct) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonDbb23193EncodeGithubComTidwallSjson(w, v)
+func (bs BenchStruct) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjsonDbb23193EncodeGithubComTidwallSjson(w, bs)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *BenchStruct) UnmarshalEasyJSONFromData(data []byte) error {
+func (bs *BenchStruct) UnmarshalEasyJSONFromData(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonDbb23193DecodeGithubComTidwallSjson(&r, v)
+	easyjsonDbb23193DecodeGithubComTidwallSjson(&r, bs)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *BenchStruct) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonDbb23193DecodeGithubComTidwallSjson(l, v)
+func (bs *BenchStruct) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjsonDbb23193DecodeGithubComTidwallSjson(l, bs)
 }
+
 func easyjsonDbb23193Decode(in *jlexer.Lexer, out *struct {
 	Debug  string "json:\"debug\""
 	Window struct {
@@ -1020,20 +1027,22 @@ func easyjsonDbb23193Encode1(out *jwriter.Writer, in struct {
 	out.Int(int(in.Height))
 	out.RawByte('}')
 }
-func (mj *BenchStruct) MarshalFFJSONFromData() ([]byte, error) {
+
+func (bs *BenchStruct) MarshalFFJSONFromData() ([]byte, error) {
 	var buf fflib.Buffer
-	if mj == nil {
+	if bs == nil {
 		buf.WriteString("null")
 		return buf.Bytes(), nil
 	}
-	err := mj.MarshalJSONBufFFJSON(&buf)
+	err := bs.MarshalJSONBufFFJSON(&buf)
 	if err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
 }
-func (mj *BenchStruct) MarshalJSONBufFFJSON(buf fflib.EncodingBuffer) error {
-	if mj == nil {
+
+func (bs *BenchStruct) MarshalJSONBufFFJSON(buf fflib.EncodingBuffer) error {
+	if bs == nil {
 		buf.WriteString("null")
 		return nil
 	}
@@ -1043,40 +1052,40 @@ func (mj *BenchStruct) MarshalJSONBufFFJSON(buf fflib.EncodingBuffer) error {
 	_ = err
 	/* Inline struct. type=struct { Debug string "json:\"debug\""; Window struct { Title string "json:\"title\""; Name string "json:\"name\""; Width int "json:\"width\""; Height int "json:\"height\"" } "json:\"window\""; Image struct { Src string "json:\"src\""; HOffset int "json:\"hOffset\""; VOffset int "json:\"vOffset\""; Alignment string "json:\"alignment\"" } "json:\"image\""; Text struct { Data string "json:\"data\""; Size int "json:\"size\""; Style string "json:\"style\""; VOffset int "json:\"vOffset\""; Alignment string "json:\"alignment\""; OnMouseUp string "json:\"onMouseUp\"" } "json:\"text\"" } kind=struct */
 	buf.WriteString(`{"widget":{ "debug":`)
-	fflib.WriteJsonString(buf, string(mj.Widget.Debug))
+	fflib.WriteJsonString(buf, string(bs.Widget.Debug))
 	/* Inline struct. type=struct { Title string "json:\"title\""; Name string "json:\"name\""; Width int "json:\"width\""; Height int "json:\"height\"" } kind=struct */
 	buf.WriteString(`,"window":{ "title":`)
-	fflib.WriteJsonString(buf, string(mj.Widget.Window.Title))
+	fflib.WriteJsonString(buf, string(bs.Widget.Window.Title))
 	buf.WriteString(`,"name":`)
-	fflib.WriteJsonString(buf, string(mj.Widget.Window.Name))
+	fflib.WriteJsonString(buf, string(bs.Widget.Window.Name))
 	buf.WriteString(`,"width":`)
-	fflib.FormatBits2(buf, uint64(mj.Widget.Window.Width), 10, mj.Widget.Window.Width < 0)
+	fflib.FormatBits2(buf, uint64(bs.Widget.Window.Width), 10, bs.Widget.Window.Width < 0)
 	buf.WriteString(`,"height":`)
-	fflib.FormatBits2(buf, uint64(mj.Widget.Window.Height), 10, mj.Widget.Window.Height < 0)
+	fflib.FormatBits2(buf, uint64(bs.Widget.Window.Height), 10, bs.Widget.Window.Height < 0)
 	buf.WriteByte('}')
 	/* Inline struct. type=struct { Src string "json:\"src\""; HOffset int "json:\"hOffset\""; VOffset int "json:\"vOffset\""; Alignment string "json:\"alignment\"" } kind=struct */
 	buf.WriteString(`,"image":{ "src":`)
-	fflib.WriteJsonString(buf, string(mj.Widget.Image.Src))
+	fflib.WriteJsonString(buf, string(bs.Widget.Image.Src))
 	buf.WriteString(`,"hOffset":`)
-	fflib.FormatBits2(buf, uint64(mj.Widget.Image.HOffset), 10, mj.Widget.Image.HOffset < 0)
+	fflib.FormatBits2(buf, uint64(bs.Widget.Image.HOffset), 10, bs.Widget.Image.HOffset < 0)
 	buf.WriteString(`,"vOffset":`)
-	fflib.FormatBits2(buf, uint64(mj.Widget.Image.VOffset), 10, mj.Widget.Image.VOffset < 0)
+	fflib.FormatBits2(buf, uint64(bs.Widget.Image.VOffset), 10, bs.Widget.Image.VOffset < 0)
 	buf.WriteString(`,"alignment":`)
-	fflib.WriteJsonString(buf, string(mj.Widget.Image.Alignment))
+	fflib.WriteJsonString(buf, string(bs.Widget.Image.Alignment))
 	buf.WriteByte('}')
 	/* Inline struct. type=struct { Data string "json:\"data\""; Size int "json:\"size\""; Style string "json:\"style\""; VOffset int "json:\"vOffset\""; Alignment string "json:\"alignment\""; OnMouseUp string "json:\"onMouseUp\"" } kind=struct */
 	buf.WriteString(`,"text":{ "data":`)
-	fflib.WriteJsonString(buf, string(mj.Widget.Text.Data))
+	fflib.WriteJsonString(buf, string(bs.Widget.Text.Data))
 	buf.WriteString(`,"size":`)
-	fflib.FormatBits2(buf, uint64(mj.Widget.Text.Size), 10, mj.Widget.Text.Size < 0)
+	fflib.FormatBits2(buf, uint64(bs.Widget.Text.Size), 10, bs.Widget.Text.Size < 0)
 	buf.WriteString(`,"style":`)
-	fflib.WriteJsonString(buf, string(mj.Widget.Text.Style))
+	fflib.WriteJsonString(buf, string(bs.Widget.Text.Style))
 	buf.WriteString(`,"vOffset":`)
-	fflib.FormatBits2(buf, uint64(mj.Widget.Text.VOffset), 10, mj.Widget.Text.VOffset < 0)
+	fflib.FormatBits2(buf, uint64(bs.Widget.Text.VOffset), 10, bs.Widget.Text.VOffset < 0)
 	buf.WriteString(`,"alignment":`)
-	fflib.WriteJsonString(buf, string(mj.Widget.Text.Alignment))
+	fflib.WriteJsonString(buf, string(bs.Widget.Text.Alignment))
 	buf.WriteString(`,"onMouseUp":`)
-	fflib.WriteJsonString(buf, string(mj.Widget.Text.OnMouseUp))
+	fflib.WriteJsonString(buf, string(bs.Widget.Text.OnMouseUp))
 	buf.WriteByte('}')
 	buf.WriteByte('}')
 	buf.WriteByte('}')
@@ -1084,22 +1093,22 @@ func (mj *BenchStruct) MarshalJSONBufFFJSON(buf fflib.EncodingBuffer) error {
 }
 
 const (
-	ffj_t_BenchStructbase = iota
-	ffj_t_BenchStructno_such_key
+	ffjTBenchStructbase = iota
+	ffjTBenchStructNoSuchKey
 
-	ffj_t_BenchStruct_Widget
+	ffjTBenchStructWidget
 )
 
-var ffj_key_BenchStruct_Widget = []byte("widget")
+var ffjKeyBenchStructWidget = []byte("widget")
 
-func (uj *BenchStruct) UnmarshalFFJSONFromData(input []byte) error {
+func (bs *BenchStruct) UnmarshalFFJSONFromData(input []byte) error {
 	fs := fflib.NewFFLexer(input)
-	return uj.UnmarshalJSONFFLexer(fs, fflib.FFParse_map_start)
+	return bs.UnmarshalJSONFFLexer(fs, fflib.FFParse_map_start)
 }
 
-func (uj *BenchStruct) UnmarshalJSONFFLexer(fs *fflib.FFLexer, state fflib.FFParseState) error {
-	var err error = nil
-	currentKey := ffj_t_BenchStructbase
+func (bs *BenchStruct) UnmarshalJSONFFLexer(fs *fflib.FFLexer, state fflib.FFParseState) error {
+	var err error
+	currentKey := ffjTBenchStructbase
 	_ = currentKey
 	tok := fflib.FFTok_init
 	wantedTok := fflib.FFTok_init
@@ -1145,7 +1154,7 @@ mainparse:
 			kn := fs.Output.Bytes()
 			if len(kn) <= 0 {
 				// "" case. hrm.
-				currentKey = ffj_t_BenchStructno_such_key
+				currentKey = ffjTBenchStructNoSuchKey
 				state = fflib.FFParse_want_colon
 				goto mainparse
 			} else {
@@ -1153,21 +1162,21 @@ mainparse:
 
 				case 'w':
 
-					if bytes.Equal(ffj_key_BenchStruct_Widget, kn) {
-						currentKey = ffj_t_BenchStruct_Widget
+					if bytes.Equal(ffjKeyBenchStructWidget, kn) {
+						currentKey = ffjTBenchStructWidget
 						state = fflib.FFParse_want_colon
 						goto mainparse
 					}
 
 				}
 
-				if fflib.SimpleLetterEqualFold(ffj_key_BenchStruct_Widget, kn) {
-					currentKey = ffj_t_BenchStruct_Widget
+				if fflib.SimpleLetterEqualFold(ffjKeyBenchStructWidget, kn) {
+					currentKey = ffjTBenchStructWidget
 					state = fflib.FFParse_want_colon
 					goto mainparse
 				}
 
-				currentKey = ffj_t_BenchStructno_such_key
+				currentKey = ffjTBenchStructNoSuchKey
 				state = fflib.FFParse_want_colon
 				goto mainparse
 			}
@@ -1184,10 +1193,10 @@ mainparse:
 			if tok == fflib.FFTok_left_brace || tok == fflib.FFTok_left_bracket || tok == fflib.FFTok_integer || tok == fflib.FFTok_double || tok == fflib.FFTok_string || tok == fflib.FFTok_bool || tok == fflib.FFTok_null {
 				switch currentKey {
 
-				case ffj_t_BenchStruct_Widget:
+				case ffjTBenchStructWidget:
 					goto handle_Widget
 
-				case ffj_t_BenchStructno_such_key:
+				case ffjTBenchStructNoSuchKey:
 					err = fs.SkipField(tok)
 					if err != nil {
 						return fs.WrapErr(err)
@@ -1212,7 +1221,7 @@ handle_Widget:
 			return fs.WrapErr(err)
 		}
 
-		err = gojson.Unmarshal(tbuf, &uj.Widget)
+		err = gojson.Unmarshal(tbuf, &bs.Widget)
 		if err != nil {
 			return fs.WrapErr(err)
 		}
