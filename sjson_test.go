@@ -221,7 +221,7 @@ func BenchmarkSet(t *testing.B) {
 			t.Fatal(err)
 		}
 		if res != expect {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -234,7 +234,7 @@ func BenchmarkSetRaw(t *testing.B) {
 			t.Fatal(err)
 		}
 		if res != expect {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -247,7 +247,7 @@ func BenchmarkSetBytes(t *testing.B) {
 			t.Fatal(err)
 		}
 		if bytes.Compare(res, expectBytes) != 0 {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -260,7 +260,7 @@ func BenchmarkSetRawBytes(t *testing.B) {
 			t.Fatal(err)
 		}
 		if bytes.Compare(res, expectBytes) != 0 {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -273,7 +273,7 @@ func BenchmarkSetOptimistic(t *testing.B) {
 			t.Fatal(err)
 		}
 		if res != expect {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -286,7 +286,7 @@ func BenchmarkSetInPlace(t *testing.B) {
 			t.Fatal(err)
 		}
 		if res != expect {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -299,7 +299,7 @@ func BenchmarkSetRawOptimistic(t *testing.B) {
 			t.Fatal(err)
 		}
 		if res != expect {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -312,7 +312,7 @@ func BenchmarkSetRawInPlace(t *testing.B) {
 			t.Fatal(err)
 		}
 		if res != expect {
-			t.Fatal("expected '%v', got '%v'", expect, res)
+			t.Fatalf("expected '%v', got '%v'", expect, res)
 		}
 	}
 }
@@ -325,7 +325,7 @@ func BenchmarkSetBytesOptimistic(t *testing.B) {
 			t.Fatal(err)
 		}
 		if bytes.Compare(res, expectBytes) != 0 {
-			t.Fatal("expected '%v', got '%v'", string(expectBytes), string(res))
+			t.Fatalf("expected '%v', got '%v'", string(expectBytes), string(res))
 		}
 	}
 }
@@ -339,7 +339,7 @@ func BenchmarkSetBytesInPlace(t *testing.B) {
 			t.Fatal(err)
 		}
 		if bytes.Compare(res, expectBytes) != 0 {
-			t.Fatal("expected '%v', got '%v'", string(expectBytes), string(res))
+			t.Fatalf("expected '%v', got '%v'", string(expectBytes), string(res))
 		}
 	}
 }
@@ -352,7 +352,7 @@ func BenchmarkSetRawBytesOptimistic(t *testing.B) {
 			t.Fatal(err)
 		}
 		if bytes.Compare(res, expectBytes) != 0 {
-			t.Fatal("expected '%v', got '%v'", string(expectBytes), string(res))
+			t.Fatalf("expected '%v', got '%v'", string(expectBytes), string(res))
 		}
 	}
 }
@@ -366,7 +366,7 @@ func BenchmarkSetRawBytesInPlace(t *testing.B) {
 			t.Fatal(err)
 		}
 		if bytes.Compare(res, expectBytes) != 0 {
-			t.Fatal("expected '%v', got '%v'", string(expectBytes), string(res))
+			t.Fatalf("expected '%v', got '%v'", string(expectBytes), string(res))
 		}
 	}
 }
