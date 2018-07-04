@@ -100,7 +100,7 @@ func parsePath(path string) (pathResult, error) {
 
 func mustMarshalString(s string) bool {
 	for i := 0; i < len(s); i++ {
-		if s[i] < ' ' || s[i] > 0x7f || s[i] == '"' {
+		if s[i] < ' ' || s[i] > 0x7f || s[i] == '"' || (s[i] == '\\' && i == len(s)-1) {
 			return true
 		}
 	}

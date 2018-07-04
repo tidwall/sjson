@@ -142,6 +142,7 @@ func TestBasic(t *testing.T) {
 	testRaw(t, setBool, `[true]`, ``, `0`, true)
 	testRaw(t, setBool, `[null]`, ``, `0`, nil)
 	testRaw(t, setString, `{"arr":[1]}`, ``, `arr.-1`, 1)
+	testRaw(t, setString, `{"a":"\\"}`, ``, `a`, "\\")
 }
 
 func TestDelete(t *testing.T) {
