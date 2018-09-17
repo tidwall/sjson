@@ -2,9 +2,12 @@ package sjson
 
 import (
 	"encoding/hex"
+	"fmt"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/tidwall/gjson"
 )
 
 func TestInvalidPaths(t *testing.T) {
@@ -166,4 +169,111 @@ func TestRandomData(t *testing.T) {
 		lstr = string(b[:n])
 		SetRaw(lstr, "zzzz.zzzz.zzzz", "123")
 	}
+}
+
+func TestDeleteIssue21(t *testing.T) {
+	json := `{"country_code_from":"NZ","country_code_to":"SA","date_created":"2018-09-13T02:56:11.25783Z","date_updated":"2018-09-14T03:15:16.67356Z","disabled":false,"last_edited_by":"Developers","id":"a3e...bc454","merchant_id":"f2b...b91abf","signed_date":"2018-02-01T00:00:00Z","start_date":"2018-03-01T00:00:00Z","url":"https://www.google.com"}`
+	res1 := gjson.Get(json, "date_updated")
+	var err error
+	json, err = Delete(json, "date_updated")
+	if err != nil {
+		t.Fatal(err)
+	}
+	res2 := gjson.Get(json, "date_updated")
+	res3 := gjson.Get(json, "date_created")
+	if !res1.Exists() || res2.Exists() || !res3.Exists() {
+		t.Fatal("bad news")
+	}
+
+	// We change the number of characters in this to make the section of the string before the section that we want to delete a certain length
+
+	//---------------------------
+	lenBeforeToDeleteIs307AsBytes := `{"1":"","0":"012345678901234567890123456789012345678901234567890123456789012345678901234567","to_delete":"0","2":""}`
+
+	expectedForLenBefore307AsBytes := `{"1":"","0":"012345678901234567890123456789012345678901234567890123456789012345678901234567","2":""}`
+	//---------------------------
+
+	//---------------------------
+	lenBeforeToDeleteIs308AsBytes := `{"1":"","0":"0123456789012345678901234567890123456789012345678901234567890123456789012345678","to_delete":"0","2":""}`
+
+	expectedForLenBefore308AsBytes := `{"1":"","0":"0123456789012345678901234567890123456789012345678901234567890123456789012345678","2":""}`
+	//---------------------------
+
+	//---------------------------
+	lenBeforeToDeleteIs309AsBytes := `{"1":"","0":"01234567890123456789012345678901234567890123456789012345678901234567890123456","to_delete":"0","2":""}`
+
+	expectedForLenBefore309AsBytes := `{"1":"","0":"01234567890123456789012345678901234567890123456789012345678901234567890123456","2":""}`
+	//---------------------------
+
+	var data = []struct {
+		desc     string
+		input    string
+		expected string
+	}{
+		{
+			desc:     "len before \"to_delete\"... = 307",
+			input:    lenBeforeToDeleteIs307AsBytes,
+			expected: expectedForLenBefore307AsBytes,
+		},
+		{
+			desc:     "len before \"to_delete\"... = 308",
+			input:    lenBeforeToDeleteIs308AsBytes,
+			expected: expectedForLenBefore308AsBytes,
+		},
+		{
+			desc:     "len before \"to_delete\"... = 309",
+			input:    lenBeforeToDeleteIs309AsBytes,
+			expected: expectedForLenBefore309AsBytes,
+		},
+	}
+
+	for i, d := range data {
+		result, err := Delete(d.input, "to_delete")
+
+		if err != nil {
+			t.Error(fmtErrorf(testError{
+				unexpected: "error",
+				desc:       d.desc,
+				i:          i,
+				lenInput:   len(d.input),
+				input:      d.input,
+				expected:   d.expected,
+				result:     result,
+			}))
+		}
+		if result != d.expected {
+			t.Error(fmtErrorf(testError{
+				unexpected: "result",
+				desc:       d.desc,
+				i:          i,
+				lenInput:   len(d.input),
+				input:      d.input,
+				expected:   d.expected,
+				result:     result,
+			}))
+		}
+	}
+}
+
+type testError struct {
+	unexpected string
+	desc       string
+	i          int
+	lenInput   int
+	input      interface{}
+	expected   interface{}
+	result     interface{}
+}
+
+func fmtErrorf(e testError) string {
+	return fmt.Sprintf(
+		"Unexpected %s:\n\t"+
+			"for=%q\n\t"+
+			"i=%d\n\t"+
+			"len(input)=%d\n\t"+
+			"input=%v\n\t"+
+			"expected=%v\n\t"+
+			"result=%v",
+		e.unexpected, e.desc, e.i, e.lenInput, e.input, e.expected, e.result,
+	)
 }

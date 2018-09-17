@@ -208,7 +208,7 @@ loop:
 					for ; i >= 0; i-- {
 						if buf[i] == '"' {
 							i--
-							if i >= 0 && i == '\\' {
+							if i >= 0 && buf[i] == '\\' {
 								i--
 								continue
 							}
