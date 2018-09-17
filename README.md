@@ -59,7 +59,7 @@ Path syntax
 -----------
 
 A path is a series of keys separated by a dot.
-The dot and colon characters can be escaped with '\'.
+The dot and colon characters can be escaped with '\\'.
 
 ```json
 {

@@ -277,3 +277,18 @@ func fmtErrorf(e testError) string {
 		e.unexpected, e.desc, e.i, e.lenInput, e.input, e.expected, e.result,
 	)
 }
+
+func TestSetDotKeyIssue10(t *testing.T) {
+	json := `{"app.token":"abc"}`
+	json, _ = Set(json, `app\.token`, "cde")
+	if json != `{"app.token":"cde"}` {
+		t.Fatalf("expected '%v', got '%v'", `{"app.token":"cde"}`, json)
+	}
+}
+func TestDeleteDotKeyIssue19(t *testing.T) {
+	json := []byte(`{"data":{"key1":"value1","key2.something":"value2"}}`)
+	json, _ = DeleteBytes(json, `data.key2\.something`)
+	if string(json) != `{"data":{"key1":"value1"}}` {
+		t.Fatalf("expected '%v', got '%v'", `{"data":{"key1":"value1"}}`, json)
+	}
+}
