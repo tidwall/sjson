@@ -122,6 +122,10 @@ func TestBasic(t *testing.T) {
 		``,
 		"\\:\\\\1.this.4.\\.HI", `4`)
 	testRaw(t, setRaw,
+		`{"app.token":"cde"}`,
+		`{"app.token":"abc"}`,
+		"app\\.token", `"cde"`)
+	testRaw(t, setRaw,
 		`{"b":{"this":{"😇":""}}}`,
 		``,
 		"b.this.😇", `""`)
