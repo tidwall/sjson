@@ -140,6 +140,7 @@ func TestBasic(t *testing.T) {
 	testRaw(t, setBool, `[null]`, ``, `0`, nil)
 	testRaw(t, setString, `{"arr":[1]}`, ``, `arr.-1`, 1)
 	testRaw(t, setString, `{"a":"\\"}`, ``, `a`, "\\")
+	testRaw(t, setString, `{"a":"C:\\Windows\\System32"}`, ``, `a`, `C:\Windows\System32`)
 }
 
 func TestDelete(t *testing.T) {
