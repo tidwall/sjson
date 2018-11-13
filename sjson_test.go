@@ -118,9 +118,17 @@ func TestBasic(t *testing.T) {
 		``,
 		"\\:1.this.4", `4`)
 	testRaw(t, setRaw,
-		`{":\1":{"this":[null,null,null,null,{".HI":4}]}}`,
+		"{\":\u2605\":{\"this\":[null,null,null,null,{\".HI\":4}]}}",
 		``,
-		"\\:\\\\1.this.4.\\.HI", `4`)
+		"\\:\\\u2605.this.4.\\.HI", `4`)
+	testRaw(t, setRaw,
+		`{"host":"\\\\127.0.0.1"}`,
+		``,
+		"host", `"\\\\127.0.0.1"`)
+	testRaw(t, setString,
+		`{"host":"\\\\127.0.0.1"}`,
+		``,
+		"host", `\\127.0.0.1`)
 	testRaw(t, setRaw,
 		`{"app.token":"cde"}`,
 		`{"app.token":"abc"}`,
