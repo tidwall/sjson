@@ -118,7 +118,7 @@ func TestBasic(t *testing.T) {
 		``,
 		"\\:1.this.4", `4`)
 	testRaw(t, setRaw,
-		`{":\1":{"this":[null,null,null,null,{".HI":4}]}}`,
+		`{":\\1":{"this":[null,null,null,null,{".HI":4}]}}`,
 		``,
 		"\\:\\\\1.this.4.\\.HI", `4`)
 	testRaw(t, setRaw,
@@ -140,6 +140,7 @@ func TestBasic(t *testing.T) {
 	testRaw(t, setBool, `[null]`, ``, `0`, nil)
 	testRaw(t, setString, `{"arr":[1]}`, ``, `arr.-1`, 1)
 	testRaw(t, setString, `{"a":"\\"}`, ``, `a`, "\\")
+	testRaw(t, setString, `{"a":"C:\\Windows\\System32"}`, ``, `a`, `C:\Windows\System32`)
 }
 
 func TestDelete(t *testing.T) {
