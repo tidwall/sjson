@@ -341,12 +341,12 @@ func appendRawPaths(buf []byte, jstr string, paths []pathResult, raw string,
 	default:
 		return nil, &errorType{"json must be an object or array"}
 	case '{':
-		buf = append(buf, '{')
-		buf = appendBuild(buf, false, paths, raw, stringify)
+		buf = append(buf, jsres.Raw[:len(jsres.Raw)-1]...)
 		if comma {
 			buf = append(buf, ',')
 		}
-		buf = append(buf, jsres.Raw[1:]...)
+		buf = appendBuild(buf, false, paths, raw, stringify)
+		buf = append(buf, '}')
 		return buf, nil
 	case '[':
 		var appendit bool

@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tidwall/pretty"
+
 	"github.com/tidwall/gjson"
 )
 
@@ -51,7 +53,14 @@ const (
 	setDelete = 6
 )
 
+func sortJSON(json string) string {
+	opts := pretty.Options{SortKeys: true}
+	return string(pretty.Ugly(pretty.PrettyOptions([]byte(json), &opts)))
+}
+
 func testRaw(t *testing.T, kind int, expect, json, path string, value interface{}) {
+	t.Helper()
+	expect = sortJSON(expect)
 	var json2 string
 	var err error
 	switch kind {
@@ -62,12 +71,14 @@ func testRaw(t *testing.T, kind int, expect, json, path string, value interface{
 	case setDelete:
 		json2, err = Delete(json, path)
 	}
+
 	if err != nil {
 		t.Fatal(err)
-	} else if json2 != expect {
+	}
+	json2 = sortJSON(json2)
+	if json2 != expect {
 		t.Fatalf("expected '%v', got '%v'", expect, json2)
 	}
-
 	var json3 []byte
 	switch kind {
 	default:
@@ -77,6 +88,7 @@ func testRaw(t *testing.T, kind int, expect, json, path string, value interface{
 	case setDelete:
 		json3, err = DeleteBytes([]byte(json), path)
 	}
+	json3 = []byte(sortJSON(string(json3)))
 	if err != nil {
 		t.Fatal(err)
 	} else if string(json3) != expect {
