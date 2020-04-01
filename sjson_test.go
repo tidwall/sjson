@@ -310,3 +310,27 @@ func TestDeleteDotKeyIssue19(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", `{"data":{"key1":"value1"}}`, json)
 	}
 }
+
+func TestIssue36(t *testing.T) {
+	var json = `
+	{
+	    "size": 1000
+    }
+`
+	var raw = `
+	{
+	    "sample": "hello"
+	}
+`
+	_ = raw
+	if true {
+		json, _ = SetRaw(json, "aggs", raw)
+	}
+	if !gjson.Valid(json) {
+		t.Fatal("invalid json")
+	}
+	res := gjson.Get(json, "aggs.sample").String()
+	if res != "hello" {
+		t.Fatal("unexpected result")
+	}
+}
