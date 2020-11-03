@@ -3,7 +3,6 @@
     src="logo.png" 
     width="240" height="78" border="0" alt="SJSON">
 <br>
-<a href="https://travis-ci.org/tidwall/sjson"><img src="https://img.shields.io/travis/tidwall/sjson.svg?style=flat-square" alt="Build Status"></a>
 <a href="https://godoc.org/github.com/tidwall/sjson"><img src="https://img.shields.io/badge/api-reference-blue.svg?style=flat-square" alt="GoDoc"></a>
 </p>
 
