@@ -8,7 +8,7 @@
 
 <p align="center">set a json value quickly</p>
 
-SJSON is a Go package that provides a [very fast](#performance) and simple way to set a value in a json document. The purpose for this library is to provide efficient json updating for the [SummitDB](https://github.com/tidwall/summitdb) project. 
+SJSON is a Go package that provides a [very fast](#performance) and simple way to set a value in a json document.
 For quickly retrieving json values check out [GJSON](https://github.com/tidwall/gjson).
 
 For a command line interface check out [JJ](https://github.com/tidwall/jj).
