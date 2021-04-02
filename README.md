@@ -113,6 +113,7 @@ sjson.Set(`{"key":true}`, "key", false)
 sjson.Set(`{"key":true}`, "key", 1)
 sjson.Set(`{"key":true}`, "key", 10.5)
 sjson.Set(`{"key":true}`, "key", "hello")
+sjson.Set(`{"key":true}`, "key", []string{"hello", "world"})
 sjson.Set(`{"key":true}`, "key", map[string]interface{}{"hello":"world"})
 ```
 
