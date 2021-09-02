@@ -3,7 +3,6 @@ package sjson
 
 import (
 	jsongo "encoding/json"
-	"reflect"
 	"strconv"
 	"unsafe"
 
@@ -489,6 +488,17 @@ func DeleteBytes(json []byte, path string) ([]byte, error) {
 	return SetBytes(json, path, dtype{})
 }
 
+type stringHeader struct {
+	data unsafe.Pointer
+	len  int
+}
+
+type sliceHeader struct {
+	data unsafe.Pointer
+	len  int
+	cap  int
+}
+
 func set(jstr, path, raw string,
 	stringify, del, optimistic, inplace bool) ([]byte, error) {
 	if path == "" {
@@ -503,9 +513,9 @@ func set(jstr, path, raw string,
 			}
 			if inplace && sz <= len(jstr) {
 				if !stringify || !mustMarshalString(raw) {
-					jsonh := *(*reflect.StringHeader)(unsafe.Pointer(&jstr))
-					jsonbh := reflect.SliceHeader{
-						Data: jsonh.Data, Len: jsonh.Len, Cap: jsonh.Len}
+					jsonh := *(*stringHeader)(unsafe.Pointer(&jstr))
+					jsonbh := sliceHeader{
+						data: jsonh.data, len: jsonh.len, cap: jsonh.len}
 					jbytes := *(*[]byte)(unsafe.Pointer(&jsonbh))
 					if stringify {
 						jbytes[res.Index] = '"'
@@ -571,8 +581,8 @@ func SetOptions(json, path string, value interface{},
 			opts.ReplaceInPlace = false
 		}
 	}
-	jsonh := *(*reflect.StringHeader)(unsafe.Pointer(&json))
-	jsonbh := reflect.SliceHeader{Data: jsonh.Data, Len: jsonh.Len}
+	jsonh := *(*stringHeader)(unsafe.Pointer(&json))
+	jsonbh := sliceHeader{data: jsonh.data, len: jsonh.len, cap: jsonh.len}
 	jsonb := *(*[]byte)(unsafe.Pointer(&jsonbh))
 	res, err := SetBytesOptions(jsonb, path, value, opts)
 	return string(res), err

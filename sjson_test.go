@@ -334,3 +334,6 @@ func TestIssue36(t *testing.T) {
 		t.Fatal("unexpected result")
 	}
 }
+
+func TestIndexes(t *testing.T) {
+}
