@@ -3,7 +3,6 @@ package sjson
 
 import (
 	jsongo "encoding/json"
-	"errors"
 	"sort"
 	"strconv"
 	"unsafe"
@@ -548,8 +547,6 @@ func set(jstr, path, raw string,
 			return buf, nil
 		}
 	}
-	// parse the path, make sure that it does not contain invalid characters
-	// such as '#', '?', '*'
 	var paths []pathResult
 	r, simple := parsePath(path)
 	if simple {
@@ -565,7 +562,7 @@ func set(jstr, path, raw string,
 	if !simple {
 		if del {
 			return []byte(jstr),
-				errors.New("cannot delete value from a complex path")
+				&errorType{"cannot delete value from a complex path"}
 		}
 		return setComplexPath(jstr, path, raw, stringify)
 	}
@@ -579,7 +576,7 @@ func set(jstr, path, raw string,
 func setComplexPath(jstr, path, raw string, stringify bool) ([]byte, error) {
 	res := gjson.Get(jstr, path)
 	if !res.Exists() || !(res.Index != 0 || len(res.Indexes) != 0) {
-		return []byte(jstr), errors.New("no values found at path")
+		return []byte(jstr), errNoChange
 	}
 	if res.Index != 0 {
 		njson := []byte(jstr[:res.Index])
@@ -602,8 +599,7 @@ func setComplexPath(jstr, path, raw string, stringify bool) ([]byte, error) {
 			return true
 		})
 		if len(res.Indexes) != len(vals) {
-			return []byte(jstr),
-				errors.New("could not set value due to index mismatch")
+			return []byte(jstr), errNoChange
 		}
 		for i := 0; i < len(res.Indexes); i++ {
 			vals[i].index = res.Indexes[i]
