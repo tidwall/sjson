@@ -3,6 +3,8 @@ package sjson
 
 import (
 	jsongo "encoding/json"
+	"errors"
+	"sort"
 	"strconv"
 	"unsafe"
 
@@ -41,7 +43,16 @@ type pathResult struct {
 	more  bool   // there is more path to parse
 }
 
-func parsePath(path string) (pathResult, error) {
+func isSimpleChar(ch byte) bool {
+	switch ch {
+	case '|', '#', '@', '*', '?':
+		return false
+	default:
+		return true
+	}
+}
+
+func parsePath(path string) (res pathResult, simple bool) {
 	var r pathResult
 	if len(path) > 0 && path[0] == ':' {
 		r.force = true
@@ -53,12 +64,10 @@ func parsePath(path string) (pathResult, error) {
 			r.gpart = path[:i]
 			r.path = path[i+1:]
 			r.more = true
-			return r, nil
+			return r, true
 		}
-		if path[i] == '*' || path[i] == '?' {
-			return r, &errorType{"wildcard characters not allowed in path"}
-		} else if path[i] == '#' {
-			return r, &errorType{"array access character not allowed in path"}
+		if !isSimpleChar(path[i]) {
+			return r, false
 		}
 		if path[i] == '\\' {
 			// go into escape mode. this is a slower path that
@@ -84,13 +93,9 @@ func parsePath(path string) (pathResult, error) {
 						r.gpart = string(gpart)
 						r.path = path[i+1:]
 						r.more = true
-						return r, nil
-					} else if path[i] == '*' || path[i] == '?' {
-						return r, &errorType{
-							"wildcard characters not allowed in path"}
-					} else if path[i] == '#' {
-						return r, &errorType{
-							"array access character not allowed in path"}
+						return r, true
+					} else if !isSimpleChar(path[i]) {
+						return r, false
 					}
 					epart = append(epart, path[i])
 					gpart = append(gpart, path[i])
@@ -99,12 +104,12 @@ func parsePath(path string) (pathResult, error) {
 			// append the last part
 			r.part = string(epart)
 			r.gpart = string(gpart)
-			return r, nil
+			return r, true
 		}
 	}
 	r.part = path
 	r.gpart = path
-	return r, nil
+	return r, true
 }
 
 func mustMarshalString(s string) bool {
@@ -502,7 +507,7 @@ type sliceHeader struct {
 func set(jstr, path, raw string,
 	stringify, del, optimistic, inplace bool) ([]byte, error) {
 	if path == "" {
-		return nil, &errorType{"path cannot be empty"}
+		return []byte(jstr), &errorType{"path cannot be empty"}
 	}
 	if !del && optimistic && isOptimisticPath(path) {
 		res := gjson.Get(jstr, path)
@@ -530,7 +535,7 @@ func set(jstr, path, raw string,
 					}
 					return jbytes[:sz], nil
 				}
-				return nil, nil
+				return []byte(jstr), nil
 			}
 			buf := make([]byte, 0, sz)
 			buf = append(buf, jstr[:res.Index]...)
@@ -545,24 +550,81 @@ func set(jstr, path, raw string,
 	}
 	// parse the path, make sure that it does not contain invalid characters
 	// such as '#', '?', '*'
-	paths := make([]pathResult, 0, 4)
-	r, err := parsePath(path)
-	if err != nil {
-		return nil, err
-	}
-	paths = append(paths, r)
-	for r.more {
-		if r, err = parsePath(r.path); err != nil {
-			return nil, err
-		}
+	var paths []pathResult
+	r, simple := parsePath(path)
+	if simple {
 		paths = append(paths, r)
+		for r.more {
+			r, simple = parsePath(r.path)
+			if !simple {
+				break
+			}
+			paths = append(paths, r)
+		}
 	}
-
+	if !simple {
+		if del {
+			return []byte(jstr),
+				errors.New("cannot delete value from a complex path")
+		}
+		return setComplexPath(jstr, path, raw, stringify)
+	}
 	njson, err := appendRawPaths(nil, jstr, paths, raw, stringify, del)
 	if err != nil {
-		return nil, err
+		return []byte(jstr), err
 	}
 	return njson, nil
+}
+
+func setComplexPath(jstr, path, raw string, stringify bool) ([]byte, error) {
+	res := gjson.Get(jstr, path)
+	if !res.Exists() || !(res.Index != 0 || len(res.Indexes) != 0) {
+		return []byte(jstr), errors.New("no values found at path")
+	}
+	if res.Index != 0 {
+		njson := []byte(jstr[:res.Index])
+		if stringify {
+			njson = appendStringify(njson, raw)
+		} else {
+			njson = append(njson, raw...)
+		}
+		njson = append(njson, jstr[res.Index+len(res.Raw):]...)
+		jstr = string(njson)
+	}
+	if len(res.Indexes) > 0 {
+		type val struct {
+			index int
+			res   gjson.Result
+		}
+		vals := make([]val, 0, len(res.Indexes))
+		res.ForEach(func(_, vres gjson.Result) bool {
+			vals = append(vals, val{res: vres})
+			return true
+		})
+		if len(res.Indexes) != len(vals) {
+			return []byte(jstr),
+				errors.New("could not set value due to index mismatch")
+		}
+		for i := 0; i < len(res.Indexes); i++ {
+			vals[i].index = res.Indexes[i]
+		}
+		sort.SliceStable(vals, func(i, j int) bool {
+			return vals[i].index > vals[j].index
+		})
+		for _, val := range vals {
+			vres := val.res
+			index := val.index
+			njson := []byte(jstr[:index])
+			if stringify {
+				njson = appendStringify(njson, raw)
+			} else {
+				njson = append(njson, raw...)
+			}
+			njson = append(njson, jstr[index+len(vres.Raw):]...)
+			jstr = string(njson)
+		}
+	}
+	return []byte(jstr), nil
 }
 
 // SetOptions sets a json value for the specified path with options.

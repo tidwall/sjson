@@ -7,42 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tidwall/pretty"
-
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/pretty"
 )
-
-func TestInvalidPaths(t *testing.T) {
-	var err error
-	_, err = SetRaw(`{"hello":"world"}`, "", `"planet"`)
-	if err == nil || err.Error() != "path cannot be empty" {
-		t.Fatalf("expecting '%v', got '%v'", "path cannot be empty", err)
-	}
-	_, err = SetRaw("", "name.last.#", "")
-	if err == nil || err.Error() != "array access character not allowed in path" {
-		t.Fatalf("expecting '%v', got '%v'", "array access character not allowed in path", err)
-	}
-	_, err = SetRaw("", "name.last.\\1#", "")
-	if err == nil || err.Error() != "array access character not allowed in path" {
-		t.Fatalf("expecting '%v', got '%v'", "array access character not allowed in path", err)
-	}
-	_, err = SetRaw("", "name.las?t", "")
-	if err == nil || err.Error() != "wildcard characters not allowed in path" {
-		t.Fatalf("expecting '%v', got '%v'", "wildcard characters not allowed in path", err)
-	}
-	_, err = SetRaw("", "name.la\\s?t", "")
-	if err == nil || err.Error() != "wildcard characters not allowed in path" {
-		t.Fatalf("expecting '%v', got '%v'", "wildcard characters not allowed in path", err)
-	}
-	_, err = SetRaw("", "name.las*t", "")
-	if err == nil || err.Error() != "wildcard characters not allowed in path" {
-		t.Fatalf("expecting '%v', got '%v'", "wildcard characters not allowed in path", err)
-	}
-	_, err = SetRaw("", "name.las\\a*t", "")
-	if err == nil || err.Error() != "wildcard characters not allowed in path" {
-		t.Fatalf("expecting '%v', got '%v'", "wildcard characters not allowed in path", err)
-	}
-}
 
 const (
 	setRaw    = 1
@@ -335,5 +302,38 @@ func TestIssue36(t *testing.T) {
 	}
 }
 
+var example = `
+{
+	"name": {"first": "Tom", "last": "Anderson"},
+	"age":37,
+	"children": ["Sara","Alex","Jack"],
+	"fav.movie": "Deer Hunter",
+	"friends": [
+	  {"first": "Dale", "last": "Murphy", "age": 44, "nets": ["ig", "fb", "tw"]},
+	  {"first": "Roger", "last": "Craig", "age": 68, "nets": ["fb", "tw"]},
+	  {"first": "Jane", "last": "Murphy", "age": 47, "nets": ["ig", "tw"]}
+	]
+  }
+  `
+
+func TestIndex(t *testing.T) {
+	path := `friends.#(last="Murphy").last`
+	json, err := Set(example, path, "Johnson")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gjson.Get(json, "friends.#.last").String() != `["Johnson","Craig","Murphy"]` {
+		t.Fatal("mismatch")
+	}
+}
+
 func TestIndexes(t *testing.T) {
+	path := `friends.#(last="Murphy")#.last`
+	json, err := Set(example, path, "Johnson")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gjson.Get(json, "friends.#.last").String() != `["Johnson","Craig","Johnson"]` {
+		t.Fatal("mismatch")
+	}
 }
