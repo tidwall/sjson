@@ -337,3 +337,17 @@ func TestIndexes(t *testing.T) {
 		t.Fatal("mismatch")
 	}
 }
+
+func TestIssue61(t *testing.T) {
+	json := `{
+		"@context": {
+		  "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+		  "@vocab": "http://schema.org/",
+		  "sh": "http://www.w3.org/ns/shacl#"
+		}
+	}`
+	json1, _ := Set(json, "@context.@vocab", "newval")
+	if gjson.Get(json1, "@context.@vocab").String() != "newval" {
+		t.Fail()
+	}
+}
