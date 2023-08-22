@@ -172,23 +172,23 @@ func TestDeleteIssue21(t *testing.T) {
 
 	// We change the number of characters in this to make the section of the string before the section that we want to delete a certain length
 
-	//---------------------------
+	// ---------------------------
 	lenBeforeToDeleteIs307AsBytes := `{"1":"","0":"012345678901234567890123456789012345678901234567890123456789012345678901234567","to_delete":"0","2":""}`
 
 	expectedForLenBefore307AsBytes := `{"1":"","0":"012345678901234567890123456789012345678901234567890123456789012345678901234567","2":""}`
-	//---------------------------
+	// ---------------------------
 
-	//---------------------------
+	// ---------------------------
 	lenBeforeToDeleteIs308AsBytes := `{"1":"","0":"0123456789012345678901234567890123456789012345678901234567890123456789012345678","to_delete":"0","2":""}`
 
 	expectedForLenBefore308AsBytes := `{"1":"","0":"0123456789012345678901234567890123456789012345678901234567890123456789012345678","2":""}`
-	//---------------------------
+	// ---------------------------
 
-	//---------------------------
+	// ---------------------------
 	lenBeforeToDeleteIs309AsBytes := `{"1":"","0":"01234567890123456789012345678901234567890123456789012345678901234567890123456","to_delete":"0","2":""}`
 
 	expectedForLenBefore309AsBytes := `{"1":"","0":"01234567890123456789012345678901234567890123456789012345678901234567890123456","2":""}`
-	//---------------------------
+	// ---------------------------
 
 	var data = []struct {
 		desc     string
@@ -349,5 +349,99 @@ func TestIssue61(t *testing.T) {
 	json1, _ := Set(json, "@context.@vocab", "newval")
 	if gjson.Get(json1, "@context.@vocab").String() != "newval" {
 		t.Fail()
+	}
+}
+
+func TestSetBytesOptionsManyByGetResult(t *testing.T) {
+	tcs := []struct {
+		name     string
+		jsonPath string
+		newIDs   []interface{}
+		actual   string
+		expected string
+	}{
+		{
+			name:     "string",
+			jsonPath: "#.id",
+			newIDs:   []interface{}{"stringid1", "stringid2", "stringid3"},
+			actual: `[
+	  {"id": "id1","first": "Dale", "last": "Murphy", "age": 44, "nets": ["ig", "fb", "tw"]},
+	  {"id": "id2","first": "Roger", "last": "Craig", "age": 68, "nets": ["fb", "tw"]},
+	  {"id": "id3","first": "Jane", "last": "Murphy", "age": 47, "nets": ["ig", "tw"]}
+	]`,
+			expected: `[
+	  {"id": "stringid1","first": "Dale", "last": "Murphy", "age": 44, "nets": ["ig", "fb", "tw"]},
+	  {"id": "stringid2","first": "Roger", "last": "Craig", "age": 68, "nets": ["fb", "tw"]},
+	  {"id": "stringid3","first": "Jane", "last": "Murphy", "age": 47, "nets": ["ig", "tw"]}
+	]`,
+		},
+		{
+			name:     "bool",
+			jsonPath: "#.isAdult",
+			newIDs:   []interface{}{false, false, false},
+			actual: `[
+	  {"id": "id1","first": "Dale", "last": "Murphy", "age": 44, "isAdult": true, "nets": ["ig", "fb", "tw"]},
+	  {"id": "id2","first": "Roger", "last": "Craig", "age": 68, "isAdult": true, "nets": ["fb", "tw"]},
+	  {"id": "id3","first": "Jane", "last": "Murphy", "age": 47, "isAdult": true, "nets": ["ig", "tw"]}
+	]`,
+			expected: `[
+	  {"id": "id1","first": "Dale", "last": "Murphy", "age": 44, "isAdult": false, "nets": ["ig", "fb", "tw"]},
+	  {"id": "id2","first": "Roger", "last": "Craig", "age": 68, "isAdult": false, "nets": ["fb", "tw"]},
+	  {"id": "id3","first": "Jane", "last": "Murphy", "age": 47, "isAdult": false, "nets": ["ig", "tw"]}
+	]`,
+		},
+		{
+			name:     "int",
+			jsonPath: "#.age",
+			newIDs:   []interface{}{10, 20, 30},
+			actual: `[
+	  {"id": "id1","first": "Dale", "last": "Murphy", "age": 44, "nets": ["ig", "fb", "tw"]},
+	  {"id": "id2","first": "Roger", "last": "Craig", "age": 68, "nets": ["fb", "tw"]},
+	  {"id": "id3","first": "Jane", "last": "Murphy", "age": 47, "nets": ["ig", "tw"]}
+	]`,
+			expected: `[
+	  {"id": "id1","first": "Dale", "last": "Murphy", "age": 10, "nets": ["ig", "fb", "tw"]},
+	  {"id": "id2","first": "Roger", "last": "Craig", "age": 20, "nets": ["fb", "tw"]},
+	  {"id": "id3","first": "Jane", "last": "Murphy", "age": 30, "nets": ["ig", "tw"]}
+	]`,
+		},
+		{
+			name:     "float",
+			jsonPath: "#.age",
+			newIDs:   []interface{}{10.1, 20.1, 30.1},
+			actual: `[
+	  {"id": "id1","first": "Dale", "last": "Murphy", "age": 44.1, "nets": ["ig", "fb", "tw"]},
+	  {"id": "id2","first": "Roger", "last": "Craig", "age": 68.1, "nets": ["fb", "tw"]},
+	  {"id": "id3","first": "Jane", "last": "Murphy", "age": 471., "nets": ["ig", "tw"]}
+	]`,
+			expected: `[
+	  {"id": "id1","first": "Dale", "last": "Murphy", "age": 10.1, "nets": ["ig", "fb", "tw"]},
+	  {"id": "id2","first": "Roger", "last": "Craig", "age": 20.1, "nets": ["fb", "tw"]},
+	  {"id": "id3","first": "Jane", "last": "Murphy", "age": 30.1, "nets": ["ig", "tw"]}
+	]`,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			getResult := gjson.Get(tc.actual, tc.jsonPath)
+			if !getResult.Exists() || !getResult.IsArray() {
+				t.Fail()
+			}
+			arrayResult := getResult.Array()
+
+			opts := &Options{
+				Optimistic:     true,
+				ReplaceInPlace: true,
+			}
+			actual, err := SetBytesOptionsManyByGetResult([]byte(tc.actual), arrayResult, tc.newIDs, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if sortJSON(tc.expected) != sortJSON(string(actual)) {
+				t.Fatalf("expected '%v', got '%v'", tc.expected, string(actual))
+			}
+		})
 	}
 }
