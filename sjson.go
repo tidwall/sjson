@@ -557,7 +557,7 @@ func setManyByGetResult(jstr string, raws []interface{}, valueDiff int, ress []g
 		}
 	}
 
-	valueDiff += 2 * len(raws)
+	valueDiff += 2 * stringifiedCount
 	blen := len(jstr) + valueDiff
 
 	var buf = make([]byte, len(jstr))
