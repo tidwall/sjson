@@ -420,6 +420,21 @@ func TestSetBytesOptionsManyByGetResult(t *testing.T) {
 	  {"id": "id3","first": "Jane", "last": "Murphy", "age": 30.1, "nets": ["ig", "tw"]}
 	]`,
 		},
+		{
+			name:     "float_and_string",
+			jsonPath: "#.age",
+			newIDs:   []interface{}{"forty four", 20.1, "forty seven"},
+			actual: `[
+	  {"id": "id1","first": "Dale", "last": "Murphy", "age": 44.1, "nets": ["ig", "fb", "tw"]},
+	  {"id": "id2","first": "Roger", "last": "Craig", "age": 68.1, "nets": ["fb", "tw"]},
+	  {"id": "id3","first": "Jane", "last": "Murphy", "age": 47.1, "nets": ["ig", "tw"]}
+	]`,
+			expected: `[
+	  {"id": "id1","first": "Dale", "last": "Murphy", "age": "forty four", "nets": ["ig", "fb", "tw"]},
+	  {"id": "id2","first": "Roger", "last": "Craig", "age": 20.1, "nets": ["fb", "tw"]},
+	  {"id": "id3","first": "Jane", "last": "Murphy", "age": "forty seven", "nets": ["ig", "tw"]}
+	]`,
+		},
 	}
 
 	for _, tc := range tcs {
