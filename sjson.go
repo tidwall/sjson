@@ -542,16 +542,24 @@ func setByGetResult(jstr, raw string, res gjson.Result,
 	return buf, nil
 }
 
-func setManyByGetResult(jstr string, raws []interface{}, valueDiff int, ress []gjson.Result,
-	stringify, inplace bool) ([]byte, error) {
+func setManyByGetResult(jstr string, raws []interface{}, valueDiff int, ress []gjson.Result, inplace bool) ([]byte, error) {
+	var stringifiedCount int
 
-	var blen int
+	stringified := make([]bool, len(raws))
 
-	if stringify {
-		valueDiff += 2 * len(raws)
+	for i, r := range raws {
+		switch r.(type) {
+		case string:
+			stringified[i] = true
+			stringifiedCount += 1
+		default:
+			stringified[i] = false
+		}
 	}
 
-	blen = len(jstr) + valueDiff
+	valueDiff += 2 * stringifiedCount
+	blen := len(jstr) + valueDiff
+
 	var buf = make([]byte, len(jstr))
 	copy(buf, jstr)
 	if !inplace {
@@ -571,6 +579,7 @@ func setManyByGetResult(jstr string, raws []interface{}, valueDiff int, ress []g
 
 		currentSz = len(rwb) - len(res.Raw)
 
+		stringify := stringified[i]
 		if stringify {
 			currentSz += 2
 
@@ -836,16 +845,7 @@ func SetBytesOptionsManyByGetResult(json []byte, getResult []gjson.Result, value
 		valueDiff += len(v) - len(getResult[i].Raw)
 	}
 
-	var stringify bool
-	switch val := values[0].(type) {
-	case string:
-		stringify = true
-	case bool, int, int8, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
-		stringify = false
-	default:
-		return nil, fmt.Errorf("value type is not supported %v", val)
-	}
-	res, err = setManyByGetResult(jstr, values, valueDiff, getResult, stringify, inplace)
+	res, err = setManyByGetResult(jstr, values, valueDiff, getResult, inplace)
 
 	if err == errNoChange {
 		return json, nil
