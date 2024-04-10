@@ -1,4 +1,4 @@
-// Package sjson provides setting json values.
+// Package sjson provides a very fast and simple way to set JSON values.
 package sjson
 
 import (
@@ -427,26 +427,25 @@ func isOptimisticPath(path string) bool {
 //
 // A path is a series of keys separated by a dot.
 //
-//  {
-//    "name": {"first": "Tom", "last": "Anderson"},
-//    "age":37,
-//    "children": ["Sara","Alex","Jack"],
-//    "friends": [
-//      {"first": "James", "last": "Murphy"},
-//      {"first": "Roger", "last": "Craig"}
-//    ]
-//  }
-//  "name.last"          >> "Anderson"
-//  "age"                >> 37
-//  "children.1"         >> "Alex"
-//
+//	{
+//	  "name": {"first": "Tom", "last": "Anderson"},
+//	  "age":37,
+//	  "children": ["Sara","Alex","Jack"],
+//	  "friends": [
+//	    {"first": "James", "last": "Murphy"},
+//	    {"first": "Roger", "last": "Craig"}
+//	  ]
+//	}
+//	"name.last"          >> "Anderson"
+//	"age"                >> 37
+//	"children.1"         >> "Alex"
 func Set(json, path string, value interface{}) (string, error) {
 	return SetOptions(json, path, value, nil)
 }
 
-// SetBytes sets a json value for the specified path.
-// If working with bytes, this method preferred over
-// Set(string(data), path, value)
+// SetBytes sets a json value for the specified path and returns the updated
+// JSON. If working with bytes, this method is preferred over Set(string(data),
+// path, value).
 func SetBytes(json []byte, path string, value interface{}) ([]byte, error) {
 	return SetBytesOptions(json, path, value, nil)
 }
@@ -473,8 +472,9 @@ func SetRawOptions(json, path, value string, opts *Options) (string, error) {
 	return string(res), err
 }
 
-// SetRawBytes sets a raw json value for the specified path.
-// If working with bytes, this method preferred over
+// SetRawBytes sets a raw json value for the specified path and returns the
+// updated JSON.
+// If working with bytes, this method is preferred over
 // SetRaw(string(data), path, value)
 func SetRawBytes(json []byte, path string, value []byte) ([]byte, error) {
 	return SetRawBytesOptions(json, path, value, nil)
@@ -646,8 +646,9 @@ func SetOptions(json, path string, value interface{},
 	return string(res), err
 }
 
-// SetBytesOptions sets a json value for the specified path with options.
-// If working with bytes, this method preferred over
+// SetBytesOptions sets a json value for the specified path with options and
+// returns the updated JSON.
+// If working with bytes, this method is preferred over
 // SetOptions(string(data), path, value)
 func SetBytesOptions(json []byte, path string, value interface{},
 	opts *Options) ([]byte, error) {
@@ -717,8 +718,9 @@ func SetBytesOptions(json []byte, path string, value interface{},
 	return res, err
 }
 
-// SetRawBytesOptions sets a raw json value for the specified path with options.
-// If working with bytes, this method preferred over
+// SetRawBytesOptions sets a raw json value for the specified path with options
+// and returns the updated JSON.
+// If working with bytes, this method is preferred over
 // SetRawOptions(string(data), path, value, opts)
 func SetRawBytesOptions(json []byte, path string, value []byte,
 	opts *Options) ([]byte, error) {
