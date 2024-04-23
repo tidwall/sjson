@@ -1,6 +1,6 @@
 <p align="center">
-<img 
-    src="logo.png" 
+<img
+    src="logo.png"
     width="240" height="78" border="0" alt="SJSON">
 <br>
 <a href="https://godoc.org/github.com/tidwall/sjson"><img src="https://img.shields.io/badge/api-reference-blue.svg?style=flat-square" alt="GoDoc"></a>
@@ -29,9 +29,9 @@ This will retrieve the library.
 
 Set a value
 -----------
-Set sets the value for the specified path. 
-A path is in dot syntax, such as "name.last" or "age". 
-This function expects that the json is well-formed and validated. 
+Set sets the value for the specified path.
+A path is in dot syntax, such as "name.last" or "age".
+This function expects that the json is well-formed and validated.
 Invalid json will not panic, but it may return back unexpected results.
 Invalid paths may return an error.
 
@@ -215,8 +215,8 @@ println(value)
 
 ## Performance
 
-Benchmarks of SJSON alongside [encoding/json](https://golang.org/pkg/encoding/json/), 
-[ffjson](https://github.com/pquerna/ffjson), 
+Benchmarks of SJSON alongside [encoding/json](https://golang.org/pkg/encoding/json/),
+[ffjson](https://github.com/pquerna/ffjson),
 [EasyJSON](https://github.com/mailru/easyjson),
 and [Gabs](https://github.com/Jeffail/gabs)
 
@@ -242,7 +242,7 @@ JSON document used:
       "width": 500,
       "height": 500
     },
-    "image": { 
+    "image": {
       "src": "Images/Sun.png",
       "hOffset": 250,
       "vOffset": 250,
@@ -257,7 +257,7 @@ JSON document used:
       "onMouseUp": "sun1.opacity = (sun1.opacity / 100) * 90;"
     }
   }
-}    
+}
 ```
 
 Each operation was rotated though one of the following search paths:
