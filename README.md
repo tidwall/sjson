@@ -30,7 +30,7 @@ This will retrieve the library.
 Set a value
 -----------
 Set sets the value for the specified path.
-A path is in dot syntax, such as "name.last" or "age".
+A path is in dot syntax, such as `name.last` or `age`.
 This function expects that the JSON is well-formed and validated.
 Invalid JSON will not panic, but it may return unexpected results.
 Invalid paths may return an error.
