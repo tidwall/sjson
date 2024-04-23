@@ -6,10 +6,10 @@
 <a href="https://godoc.org/github.com/tidwall/sjson"><img src="https://img.shields.io/badge/api-reference-blue.svg?style=flat-square" alt="GoDoc"></a>
 </p>
 
-<p align="center">set a json value quickly</p>
+<p align="center">set a JSON value quickly</p>
 
-SJSON is a Go package that provides a [very fast](#performance) and simple way to set a value in a json document.
-For quickly retrieving json values check out [GJSON](https://github.com/tidwall/gjson).
+SJSON is a Go package that provides a [very fast](#performance) and simple way to set a value in a JSON document.
+For quickly retrieving JSON values check out [GJSON](https://github.com/tidwall/gjson).
 
 For a command line interface check out [JJ](https://github.com/tidwall/jj).
 
@@ -31,8 +31,8 @@ Set a value
 -----------
 Set sets the value for the specified path.
 A path is in dot syntax, such as "name.last" or "age".
-This function expects that the json is well-formed and validated.
-Invalid json will not panic, but it may return back unexpected results.
+This function expects that the JSON is well-formed and validated.
+Invalid JSON will not panic, but it may return unexpected results.
 Invalid paths may return an error.
 
 ```go

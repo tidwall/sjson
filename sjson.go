@@ -23,9 +23,9 @@ type Options struct {
 	// Optimistic is a hint that the value likely exists which
 	// allows for the sjson to perform a fast-track search and replace.
 	Optimistic bool
-	// ReplaceInPlace is a hint to replace the input json rather than
-	// allocate a new json byte slice. When this field is specified
-	// the input json will not longer be valid and it should not be used
+	// ReplaceInPlace is a hint to replace the input JSON rather than
+	// allocate a new JSON byte slice. When this field is specified
+	// the input JSON will not longer be valid, and it should not be used
 	// In the case when the destination slice doesn't have enough free
 	// bytes to replace the data in place, a new bytes slice will be
 	// created under the hood.
@@ -120,7 +120,7 @@ func mustMarshalString(s string) bool {
 	return false
 }
 
-// appendStringify makes a json string and appends to buf.
+// appendStringify makes a JSON string and appends to buf.
 func appendStringify(buf []byte, s string) []byte {
 	if mustMarshalString(s) {
 		b, _ := jsongo.Marshal(s)
@@ -132,7 +132,7 @@ func appendStringify(buf []byte, s string) []byte {
 	return buf
 }
 
-// appendBuild builds a json block from a json path.
+// appendBuild builds a JSON block from a JSON path.
 func appendBuild(buf []byte, array bool, paths []pathResult, raw string,
 	stringify bool,
 ) []byte {
@@ -422,10 +422,10 @@ func isOptimisticPath(path string) bool {
 	return true
 }
 
-// Set sets a json value for the specified path.
+// Set sets a JSON value for the specified path.
 // A path is in dot syntax, such as "name.last" or "age".
-// This function expects that the json is well-formed, and does not validate.
-// Invalid json will not panic, but it may return back unexpected results.
+// This function expects that the JSON is well-formed, and does not validate.
+// Invalid JSON will not panic, but it may return back unexpected results.
 // An error is returned if the path is not valid.
 //
 // A path is a series of keys separated by a dot.
@@ -446,23 +446,23 @@ func Set(json, path string, value interface{}) (string, error) {
 	return SetOptions(json, path, value, nil)
 }
 
-// SetBytes sets a json value for the specified path.
+// SetBytes sets a JSON value for the specified path.
 // If working with bytes, this method preferred over
 // Set(string(data), path, value)
 func SetBytes(json []byte, path string, value interface{}) ([]byte, error) {
 	return SetBytesOptions(json, path, value, nil)
 }
 
-// SetRaw sets a raw json value for the specified path.
+// SetRaw sets a raw JSON value for the specified path.
 // This function works the same as Set except that the value is set as a
-// raw block of json. This allows for setting premarshalled json objects.
+// raw block of JSON. This allows for setting pre-marshaled JSON objects.
 func SetRaw(json, path, value string) (string, error) {
 	return SetRawOptions(json, path, value, nil)
 }
 
-// SetRawOptions sets a raw json value for the specified path with options.
+// SetRawOptions sets a raw JSON value for the specified path with options.
 // This furnction works the same as SetOptions except that the value is set
-// as a raw block of json. This allows for setting premarshalled json objects.
+// as a raw block of JSON. This allows for setting premarshalled JSON objects.
 func SetRawOptions(json, path, value string, opts *Options) (string, error) {
 	var optimistic bool
 	if opts != nil {
@@ -475,7 +475,7 @@ func SetRawOptions(json, path, value string, opts *Options) (string, error) {
 	return string(res), err
 }
 
-// SetRawBytes sets a raw json value for the specified path.
+// SetRawBytes sets a raw JSON value for the specified path.
 // If working with bytes, this method preferred over
 // SetRaw(string(data), path, value)
 func SetRawBytes(json []byte, path string, value []byte) ([]byte, error) {
@@ -484,12 +484,12 @@ func SetRawBytes(json []byte, path string, value []byte) ([]byte, error) {
 
 type dtype struct{}
 
-// Delete deletes a value from json for the specified path.
+// Delete deletes a value from JSON for the specified path.
 func Delete(json, path string) (string, error) {
 	return Set(json, path, dtype{})
 }
 
-// DeleteBytes deletes a value from json for the specified path.
+// DeleteBytes deletes a value from JSON for the specified path.
 func DeleteBytes(json []byte, path string) ([]byte, error) {
 	return SetBytes(json, path, dtype{})
 }
@@ -627,10 +627,10 @@ func setComplexPath(jstr, path, raw string, stringify bool) ([]byte, error) {
 	return []byte(jstr), nil
 }
 
-// SetOptions sets a json value for the specified path with options.
+// SetOptions sets a JSON value for the specified path with options.
 // A path is in dot syntax, such as "name.last" or "age".
-// This function expects that the json is well-formed, and does not validate.
-// Invalid json will not panic, but it may return back unexpected results.
+// This function expects that the JSON is well-formed, and does not validate.
+// Invalid JSON will not panic, but it may return back unexpected results.
 // An error is returned if the path is not valid.
 func SetOptions(json, path string, value interface{},
 	opts *Options,
@@ -651,7 +651,7 @@ func SetOptions(json, path string, value interface{},
 	return string(res), err
 }
 
-// SetBytesOptions sets a json value for the specified path with options.
+// SetBytesOptions sets a JSON value for the specified path with options.
 // If working with bytes, this method preferred over
 // SetOptions(string(data), path, value)
 func SetBytesOptions(json []byte, path string, value interface{},
@@ -723,7 +723,7 @@ func SetBytesOptions(json []byte, path string, value interface{},
 	return res, err
 }
 
-// SetRawBytesOptions sets a raw json value for the specified path with options.
+// SetRawBytesOptions sets a raw JSON value for the specified path with options.
 // If working with bytes, this method preferred over
 // SetRawOptions(string(data), path, value, opts)
 func SetRawBytesOptions(json []byte, path string, value []byte,
