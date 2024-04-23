@@ -30,7 +30,7 @@ type Options struct {
 	// bytes to replace the data in place, a new bytes slice will be
 	// created under the hood.
 	// The Optimistic flag must be set to true and the input must be a
-	// byte slice in order to use this field.
+	// byte slice to use this field.
 	ReplaceInPlace bool
 }
 
@@ -425,7 +425,7 @@ func isOptimisticPath(path string) bool {
 // Set sets a JSON value for the specified path.
 // A path is in dot syntax, such as "name.last" or "age".
 // This function expects that the JSON is well-formed, and does not validate.
-// Invalid JSON will not panic, but it may return back unexpected results.
+// Invalid JSON will not panic, but it may return unexpected results.
 // An error is returned if the path is not valid.
 //
 // A path is a series of keys separated by a dot.
@@ -462,7 +462,7 @@ func SetRaw(json, path, value string) (string, error) {
 
 // SetRawOptions sets a raw JSON value for the specified path with options.
 // This furnction works the same as SetOptions except that the value is set
-// as a raw block of JSON. This allows for setting premarshalled JSON objects.
+// as a raw block of JSON. This allows for setting pre-marshaled JSON objects.
 func SetRawOptions(json, path, value string, opts *Options) (string, error) {
 	var optimistic bool
 	if opts != nil {
@@ -630,7 +630,7 @@ func setComplexPath(jstr, path, raw string, stringify bool) ([]byte, error) {
 // SetOptions sets a JSON value for the specified path with options.
 // A path is in dot syntax, such as "name.last" or "age".
 // This function expects that the JSON is well-formed, and does not validate.
-// Invalid JSON will not panic, but it may return back unexpected results.
+// Invalid JSON will not panic, but it may return unexpected results.
 // An error is returned if the path is not valid.
 func SetOptions(json, path string, value interface{},
 	opts *Options,

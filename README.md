@@ -11,7 +11,7 @@
 SJSON is a Go package that provides a [very fast](#performance) and simple way to set a value in a JSON document.
 For quickly retrieving JSON values check out [GJSON](https://github.com/tidwall/gjson).
 
-For a command line interface check out [JJ](https://github.com/tidwall/jj).
+For a command-line interface check out [JJ](https://github.com/tidwall/jj).
 
 Getting Started
 ===============
@@ -117,7 +117,7 @@ sjson.Set(`{"key":true}`, "key", []string{"hello", "world"})
 sjson.Set(`{"key":true}`, "key", map[string]interface{}{"hello":"world"})
 ```
 
-When a type is not recognized, SJSON will fallback to the `encoding/json` Marshaller.
+When a type is not recognized, SJSON will fall back to the `encoding/json` Marshaller.
 
 
 Examples
