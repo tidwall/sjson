@@ -25,7 +25,7 @@ type Options struct {
 	Optimistic bool
 	// ReplaceInPlace is a hint to replace the input JSON rather than
 	// allocate a new JSON byte slice. When this field is specified
-	// the input JSON will not longer be valid, and it should not be used
+	// the input JSON will no longer be valid, and it should not be used
 	// In the case when the destination slice doesn't have enough free
 	// bytes to replace the data in place, a new bytes slice will be
 	// created under the hood.
@@ -162,7 +162,7 @@ func appendBuild(buf []byte, array bool, paths []pathResult, raw string,
 	return buf
 }
 
-// atoui does a rip conversion of string -> unigned int.
+// atoui does a rip conversion of string -> unsigned int.
 func atoui(r pathResult) (n int, ok bool) {
 	if r.force {
 		return 0, false
@@ -461,7 +461,7 @@ func SetRaw(json, path, value string) (string, error) {
 }
 
 // SetRawOptions sets a raw JSON value for the specified path with options.
-// This furnction works the same as SetOptions except that the value is set
+// This function works the same as SetOptions except that the value is set
 // as a raw block of JSON. This allows for setting pre-marshaled JSON objects.
 func SetRawOptions(json, path, value string, opts *Options) (string, error) {
 	var optimistic bool

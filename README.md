@@ -117,7 +117,7 @@ sjson.Set(`{"key":true}`, "key", []string{"hello", "world"})
 sjson.Set(`{"key":true}`, "key", map[string]interface{}{"hello":"world"})
 ```
 
-When a type is not recognized, SJSON will fall back to the `encoding/json` Marshaller.
+When a type is not recognized, SJSON will fall back to the `encoding/json` Marshaler.
 
 
 Examples
@@ -268,7 +268,7 @@ widget.image.hOffset
 widget.text.onMouseUp
 ```
 
-*These benchmarks were run on a MacBook Pro 15" 2.8 GHz Intel Core i7 using Go 1.7 and can be be found [here](https://github.com/tidwall/sjson-benchmarks)*.
+*These benchmarks were run on a MacBook Pro 15" 2.8 GHz Intel Core i7 using Go 1.7 and can be found [here](https://github.com/tidwall/sjson-benchmarks)*.
 
 ## Contact
 Josh Baker [@tidwall](http://twitter.com/tidwall)
