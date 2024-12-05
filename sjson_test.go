@@ -68,6 +68,7 @@ func TestBasic(t *testing.T) {
 	testRaw(t, setRaw, `[null,true]`, ``, "1", `true`)
 	testRaw(t, setRaw, `[1,null,true]`, `[1]`, "2", `true`)
 	testRaw(t, setRaw, `[1,true,false]`, `[1,null,false]`, "1", `true`)
+	testRaw(t, setRaw, `[true,true,true]`, `[1,null,false]`, "#()#", `true`)
 	testRaw(t, setRaw,
 		`[1,{"hello":"when","this":[0,null,2]},false]`,
 		`[1,{"hello":"when","this":[0,1,2]},false]`,

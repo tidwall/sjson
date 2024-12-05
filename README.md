@@ -168,6 +168,24 @@ println(value)
 // {"friends":["Andy","Carol","Sara"]
 ```
 
+Update existing value in array:
+```go
+value, _ := sjson.Set(`{"friends":["Andy","Carol"]}`, "friends.1", "Sara")
+println(value)    
+
+// Output:
+// {"friends":["Andy","Sara"]
+```
+
+Update all existing values in array:
+```go
+value, _ := sjson.Set(`{"friends":["Andy","Carol"]}`, "friends.#()#", "Sara")
+println(value)
+
+// Output:
+// {"friends":["Sara","Sara"]
+```
+
 Append an array value by using the `-1` key in a path:
 ```go
 value, _ := sjson.Set(`{"friends":["Andy","Carol"]}`, "friends.-1", "Sara")
