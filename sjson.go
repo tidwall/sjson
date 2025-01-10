@@ -427,19 +427,18 @@ func isOptimisticPath(path string) bool {
 //
 // A path is a series of keys separated by a dot.
 //
-//  {
-//    "name": {"first": "Tom", "last": "Anderson"},
-//    "age":37,
-//    "children": ["Sara","Alex","Jack"],
-//    "friends": [
-//      {"first": "James", "last": "Murphy"},
-//      {"first": "Roger", "last": "Craig"}
-//    ]
-//  }
-//  "name.last"          >> "Anderson"
-//  "age"                >> 37
-//  "children.1"         >> "Alex"
-//
+//	{
+//	  "name": {"first": "Tom", "last": "Anderson"},
+//	  "age":37,
+//	  "children": ["Sara","Alex","Jack"],
+//	  "friends": [
+//	    {"first": "James", "last": "Murphy"},
+//	    {"first": "Roger", "last": "Craig"}
+//	  ]
+//	}
+//	"name.last"          >> "Anderson"
+//	"age"                >> 37
+//	"children.1"         >> "Alex"
 func Set(json, path string, value interface{}) (string, error) {
 	return SetOptions(json, path, value, nil)
 }
@@ -487,9 +486,19 @@ func Delete(json, path string) (string, error) {
 	return Set(json, path, dtype{})
 }
 
+// DeleteOptions deletes a value from json for the specified path, with the given options.
+func DeleteOptions(json, path string, options *Options) (string, error) {
+	return SetOptions(json, path, dtype{}, options)
+}
+
 // DeleteBytes deletes a value from json for the specified path.
 func DeleteBytes(json []byte, path string) ([]byte, error) {
 	return SetBytes(json, path, dtype{})
+}
+
+// DeleteBytesOptions deletes a value from json for the specified path, with the given options.
+func DeleteBytesOptions(json []byte, path string, options *Options) ([]byte, error) {
+	return SetBytesOptions(json, path, dtype{}, options)
 }
 
 type stringHeader struct {
