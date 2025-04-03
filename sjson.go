@@ -65,6 +65,9 @@ func parsePath(path string) (res pathResult, simple bool) {
 			r.more = true
 			return r, true
 		}
+		if path[i] == ':' {
+			r.force = true
+		}
 		if !isSimpleChar(path[i]) {
 			return r, false
 		}
