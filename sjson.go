@@ -365,8 +365,6 @@ func appendRawPaths(buf []byte, jstr string, paths []pathResult, raw string,
 		if !numeric {
 			if paths[0].part == "-1" && !paths[0].force {
 				appendit = true
-			} else if paths[0].force {
-				appendit = true
 			} else {
 				return nil, &errorType{
 					"cannot set array element for non-numeric key '" +
