@@ -351,3 +351,211 @@ func TestIssue61(t *testing.T) {
 		t.Fail()
 	}
 }
+
+// https://github.com/tidwall/sjson/issues/81
+func TestNestedWildcards(t *testing.T) {
+	json := `{"object1":{"object2":[{"nested_object1":{"nested_object2":[{"nested2_object1":1},{"nested2_object1":1}]}}]}}`
+	expected := `{"object1":{"object2":[{"nested_object1":{"nested_object2":[{"nested2_object1":2},{"nested2_object1":2}]}}]}}`
+
+	result, err := Set(json, "object1.object2.#.nested_object1.nested_object2.#.nested2_object1", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result) != sortJSON(expected) {
+		t.Fatalf("expected '%v', got '%v'", expected, result)
+	}
+
+	// Test case with triple nested # wildcards
+	json2 := `{"object1":{"object2":[{"nested_object1":{"nested_object2":[{"nested_object3":[{"nested2_object1":1},{"nested2_object1":1}]}]}}]}}`
+	expected2 := `{"object1":{"object2":[{"nested_object1":{"nested_object2":[{"nested_object3":[{"nested2_object1":3},{"nested2_object1":3}]}]}}]}}`
+
+	result2, err := Set(json2, "object1.object2.#.nested_object1.nested_object2.#.nested_object3.#.nested2_object1", 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result2) != sortJSON(expected2) {
+		t.Fatalf("expected '%v', got '%v'", expected2, result2)
+	}
+}
+
+func TestWildcardBehavior(t *testing.T) {
+	// Test single # wildcard
+	json := `{"users":[{"name":"John","age":30},{"name":"Jane","age":25}]}`
+	expected := `{"users":[{"name":"John","age":35},{"name":"Jane","age":35}]}`
+
+	result, err := Set(json, "users.#.age", 35)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result) != sortJSON(expected) {
+		t.Fatalf("expected '%v', got '%v'", expected, result)
+	}
+
+	// Test # wildcard with nested objects
+	json2 := `{"teams":[{"members":[{"id":1,"active":true},{"id":2,"active":false}]},{"members":[{"id":3,"active":true}]}]}`
+	expected2 := `{"teams":[{"members":[{"id":1,"active":false},{"id":2,"active":false}]},{"members":[{"id":3,"active":false}]}]}`
+
+	result2, err := Set(json2, "teams.#.members.#.active", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result2) != sortJSON(expected2) {
+		t.Fatalf("expected '%v', got '%v'", expected2, result2)
+	}
+}
+
+func TestWildcardEdgeCases(t *testing.T) {
+	// Test empty arrays
+	json := `{"data":[]}`
+	expected := `{"data":[]}`
+
+	result, err := Set(json, "data.#.value", 42)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result) != sortJSON(expected) {
+		t.Fatalf("expected '%v', got '%v'", expected, result)
+	}
+
+	// Test nested empty arrays
+	json2 := `{"data":[{"items":[]}]}`
+	expected2 := `{"data":[{"items":[]}]}`
+
+	result2, err := Set(json2, "data.#.items.#.value", 42)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result2) != sortJSON(expected2) {
+		t.Fatalf("expected '%v', got '%v'", expected2, result2)
+	}
+
+	// Test single element arrays
+	json3 := `{"data":[{"items":[{"id":1}]}]}`
+	expected3 := `{"data":[{"items":[{"id":1,"value":42}]}]}`
+
+	result3, err := Set(json3, "data.#.items.#.value", 42)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result3) != sortJSON(expected3) {
+		t.Fatalf("expected '%v', got '%v'", expected3, result3)
+	}
+}
+
+func TestWildcardWithDifferentTypes(t *testing.T) {
+	// Test with strings
+	json := `{"items":[{"name":"old"},{"name":"old"}]}`
+	expected := `{"items":[{"name":"new"},{"name":"new"}]}`
+
+	result, err := Set(json, "items.#.name", "new")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result) != sortJSON(expected) {
+		t.Fatalf("expected '%v', got '%v'", expected, result)
+	}
+
+	// Test with booleans
+	json2 := `{"flags":[{"enabled":true},{"enabled":true}]}`
+	expected2 := `{"flags":[{"enabled":false},{"enabled":false}]}`
+
+	result2, err := Set(json2, "flags.#.enabled", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result2) != sortJSON(expected2) {
+		t.Fatalf("expected '%v', got '%v'", expected2, result2)
+	}
+
+	// Test with null
+	json3 := `{"items":[{"value":1},{"value":2}]}`
+	expected3 := `{"items":[{"value":null},{"value":null}]}`
+
+	result3, err := Set(json3, "items.#.value", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result3) != sortJSON(expected3) {
+		t.Fatalf("expected '%v', got '%v'", expected3, result3)
+	}
+}
+
+func TestWildcardWithComplexStructures(t *testing.T) {
+	// Test with nested objects and arrays
+	json := `{"departments":[{"employees":[{"details":{"salary":50000,"benefits":{"health":true,"dental":false}}}]}]}`
+	expected := `{"departments":[{"employees":[{"details":{"salary":50000,"benefits":{"health":false,"dental":false}}}]}]}`
+
+	result, err := Set(json, "departments.#.employees.#.details.benefits.health", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result) != sortJSON(expected) {
+		t.Fatalf("expected '%v', got '%v'", expected, result)
+	}
+
+	// Test with multiple arrays at same level
+	json2 := `{"data":[{"list1":[{"val":1}],"list2":[{"val":2}]}]}`
+	expected2 := `{"data":[{"list1":[{"val":99}],"list2":[{"val":2}]}]}`
+
+	result2, err := Set(json2, "data.#.list1.#.val", 99)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result2) != sortJSON(expected2) {
+		t.Fatalf("expected '%v', got '%v'", expected2, result2)
+	}
+}
+
+func TestWildcardMixedWithIndexes(t *testing.T) {
+	// Test mixing # wildcard with specific indexes
+	json := `{"groups":[{"items":[{"id":1},{"id":2}]},{"items":[{"id":3},{"id":4}]}]}`
+	expected := `{"groups":[{"items":[{"id":99},{"id":2}]},{"items":[{"id":99},{"id":4}]}]}`
+
+	result, err := Set(json, "groups.#.items.0.id", 99)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result) != sortJSON(expected) {
+		t.Fatalf("expected '%v', got '%v'", expected, result)
+	}
+
+	// Test specific index with # wildcard
+	json2 := `{"groups":[{"items":[{"id":1},{"id":2}]},{"items":[{"id":3},{"id":4}]}]}`
+	expected2 := `{"groups":[{"items":[{"id":1},{"id":2}]},{"items":[{"id":88},{"id":88}]}]}`
+
+	result2, err := Set(json2, "groups.1.items.#.id", 88)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result2) != sortJSON(expected2) {
+		t.Fatalf("expected '%v', got '%v'", expected2, result2)
+	}
+}
+
+func TestWildcardDeepNesting(t *testing.T) {
+	// Test with very deep nesting
+	json := `{"level1":[{"level2":[{"level3":[{"level4":[{"level5":[{"value":1}]}]}]}]}]}`
+	expected := `{"level1":[{"level2":[{"level3":[{"level4":[{"level5":[{"value":999}]}]}]}]}]}`
+
+	result, err := Set(json, "level1.#.level2.#.level3.#.level4.#.level5.#.value", 999)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result) != sortJSON(expected) {
+		t.Fatalf("expected '%v', got '%v'", expected, result)
+	}
+}
+
+func TestWildcardWithRawValues(t *testing.T) {
+	// Test with raw JSON values
+	json := `{"items":[{"config":{"old":"value"}},{"config":{"old":"value"}}]}`
+	expected := `{"items":[{"config":{"new":"object","with":"properties"}},{"config":{"new":"object","with":"properties"}}]}`
+
+	result, err := SetRaw(json, "items.#.config", `{"new":"object","with":"properties"}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sortJSON(result) != sortJSON(expected) {
+		t.Fatalf("expected '%v', got '%v'", expected, result)
+	}
+}

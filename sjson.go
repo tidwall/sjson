@@ -5,6 +5,7 @@ import (
 	jsongo "encoding/json"
 	"sort"
 	"strconv"
+	"strings"
 	"unsafe"
 
 	"github.com/tidwall/gjson"
@@ -427,19 +428,18 @@ func isOptimisticPath(path string) bool {
 //
 // A path is a series of keys separated by a dot.
 //
-//  {
-//    "name": {"first": "Tom", "last": "Anderson"},
-//    "age":37,
-//    "children": ["Sara","Alex","Jack"],
-//    "friends": [
-//      {"first": "James", "last": "Murphy"},
-//      {"first": "Roger", "last": "Craig"}
-//    ]
-//  }
-//  "name.last"          >> "Anderson"
-//  "age"                >> 37
-//  "children.1"         >> "Alex"
-//
+//	{
+//	  "name": {"first": "Tom", "last": "Anderson"},
+//	  "age":37,
+//	  "children": ["Sara","Alex","Jack"],
+//	  "friends": [
+//	    {"first": "James", "last": "Murphy"},
+//	    {"first": "Roger", "last": "Craig"}
+//	  ]
+//	}
+//	"name.last"          >> "Anderson"
+//	"age"                >> 37
+//	"children.1"         >> "Alex"
 func Set(json, path string, value interface{}) (string, error) {
 	return SetOptions(json, path, value, nil)
 }
@@ -575,10 +575,21 @@ func set(jstr, path, raw string,
 
 func setComplexPath(jstr, path, raw string, stringify bool) ([]byte, error) {
 	res := gjson.Get(jstr, path)
-	if !res.Exists() || !(res.Index != 0 || len(res.Indexes) != 0) {
+	if !res.Exists() {
 		return []byte(jstr), errNoChange
 	}
-	if res.Index != 0 {
+
+	// Handle nested wildcards by processing each level separately
+	if containsMultipleWildcards(path) {
+		return setNestedWildcards(jstr, path, raw, stringify)
+	}
+
+	// For single wildcards, if we get an empty result but the path contains #, proceed anyway
+	if res.Index == 0 && len(res.Indexes) == 0 && containsSimpleWildcard(path) {
+		return setNestedWildcards(jstr, path, raw, stringify)
+	}
+
+	if res.Index != 0 && len(res.Indexes) == 0 {
 		njson := []byte(jstr[:res.Index])
 		if stringify {
 			njson = appendStringify(njson, raw)
@@ -621,6 +632,119 @@ func setComplexPath(jstr, path, raw string, stringify bool) ([]byte, error) {
 		}
 	}
 	return []byte(jstr), nil
+}
+
+func containsMultipleWildcards(path string) bool {
+	count := 0
+	for i := 0; i < len(path); i++ {
+		if path[i] == '#' {
+			// Skip conditional selectors like #(condition)
+			if i+1 < len(path) && path[i+1] == '(' {
+				// Find the closing parenthesis
+				depth := 1
+				for j := i + 2; j < len(path) && depth > 0; j++ {
+					if path[j] == '(' {
+						depth++
+					} else if path[j] == ')' {
+						depth--
+					}
+					if depth == 0 {
+						i = j // Skip past the conditional selector
+						break
+					}
+				}
+			} else {
+				count++
+				if count > 1 {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func containsSimpleWildcard(path string) bool {
+	for i := 0; i < len(path); i++ {
+		if path[i] == '#' {
+			// Skip conditional selectors like #(condition)
+			if i+1 < len(path) && path[i+1] == '(' {
+				// Find the closing parenthesis
+				depth := 1
+				for j := i + 2; j < len(path) && depth > 0; j++ {
+					if path[j] == '(' {
+						depth++
+					} else if path[j] == ')' {
+						depth--
+					}
+					if depth == 0 {
+						i = j // Skip past the conditional selector
+						break
+					}
+				}
+			} else {
+				return true // Found a simple wildcard
+			}
+		}
+	}
+	return false
+}
+
+func setNestedWildcards(jstr, path, raw string, stringify bool) ([]byte, error) {
+	// Split the path at the first wildcard
+	parts := strings.Split(path, "#")
+	if len(parts) < 2 {
+		return []byte(jstr), errNoChange
+	}
+
+	// Find the first part before the first #
+	firstPart := strings.TrimSuffix(parts[0], ".")
+
+	// Get the array that contains the first wildcard
+	arrayResult := gjson.Get(jstr, firstPart)
+	if !arrayResult.Exists() || !arrayResult.IsArray() {
+		return []byte(jstr), errNoChange
+	}
+
+	// Build the remaining path after the first #
+	remainingPath := strings.Join(parts[1:], "#")
+	if strings.HasPrefix(remainingPath, ".") {
+		remainingPath = remainingPath[1:]
+	}
+
+	// Process each element in the array
+	result := jstr
+	arrayResult.ForEach(func(key, value gjson.Result) bool {
+		// Determine the raw value to set
+		var rawVal interface{}
+		if stringify {
+			rawVal = raw
+		} else {
+			// Parse the raw value as integer if it's a number
+			if rawStr, ok := interface{}(raw).(string); ok {
+				if i, err := strconv.ParseInt(rawStr, 10, 64); err == nil {
+					rawVal = i
+				} else if f, err := strconv.ParseFloat(rawStr, 64); err == nil {
+					rawVal = f
+				} else {
+					rawVal = jsongo.RawMessage(raw)
+				}
+			} else {
+				rawVal = raw
+			}
+		}
+
+		// Try to set the value - this will handle both existing and new properties
+		if updated, err := SetOptions(value.Raw, remainingPath, rawVal, nil); err == nil {
+			// Always update, even if the value looks the same (because we want to add new properties)
+			if newResult, err := SetRaw(result, firstPart+"."+key.String(), updated); err == nil {
+				result = newResult
+			}
+		}
+		return true
+	})
+
+	return []byte(result), nil
 }
 
 // SetOptions sets a json value for the specified path with options.
