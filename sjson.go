@@ -487,9 +487,19 @@ func Delete(json, path string) (string, error) {
 	return Set(json, path, dtype{})
 }
 
+// DeleteOptions deletes a value from json for the specified path, with the given options.
+func DeleteOptions(json, path string, options *Options) (string, error) {
+	return SetOptions(json, path, dtype{}, options)
+}
+
 // DeleteBytes deletes a value from json for the specified path.
 func DeleteBytes(json []byte, path string) ([]byte, error) {
 	return SetBytes(json, path, dtype{})
+}
+
+// DeleteBytesOptions deletes a value from json for the specified path, with the given options.
+func DeleteBytesOptions(json []byte, path string, options *Options) ([]byte, error) {
+	return SetBytesOptions(json, path, dtype{}, options)
 }
 
 type stringHeader struct {
