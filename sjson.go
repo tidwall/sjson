@@ -3,6 +3,7 @@ package sjson
 
 import (
 	jsongo "encoding/json"
+	"fmt"
 	"sort"
 	"strconv"
 	"unsafe"
@@ -427,19 +428,18 @@ func isOptimisticPath(path string) bool {
 //
 // A path is a series of keys separated by a dot.
 //
-//  {
-//    "name": {"first": "Tom", "last": "Anderson"},
-//    "age":37,
-//    "children": ["Sara","Alex","Jack"],
-//    "friends": [
-//      {"first": "James", "last": "Murphy"},
-//      {"first": "Roger", "last": "Craig"}
-//    ]
-//  }
-//  "name.last"          >> "Anderson"
-//  "age"                >> 37
-//  "children.1"         >> "Alex"
-//
+//	{
+//	  "name": {"first": "Tom", "last": "Anderson"},
+//	  "age":37,
+//	  "children": ["Sara","Alex","Jack"],
+//	  "friends": [
+//	    {"first": "James", "last": "Murphy"},
+//	    {"first": "Roger", "last": "Craig"}
+//	  ]
+//	}
+//	"name.last"          >> "Anderson"
+//	"age"                >> 37
+//	"children.1"         >> "Alex"
 func Set(json, path string, value interface{}) (string, error) {
 	return SetOptions(json, path, value, nil)
 }
@@ -511,6 +511,112 @@ type sliceHeader struct {
 	data unsafe.Pointer
 	len  int
 	cap  int
+}
+
+func setByGetResult(jstr, raw string, res gjson.Result,
+	stringify, del, optimistic, inplace bool) ([]byte, error) {
+
+	sz := len(jstr) - len(res.Raw) + len(raw)
+	if stringify {
+		sz += 2
+	}
+	if inplace && sz <= len(jstr) {
+		if !stringify || !mustMarshalString(raw) {
+			jsonh := *(*stringHeader)(unsafe.Pointer(&jstr))
+			jsonbh := sliceHeader{
+				data: jsonh.data, len: jsonh.len, cap: jsonh.len}
+			jbytes := *(*[]byte)(unsafe.Pointer(&jsonbh))
+			if stringify {
+				jbytes[res.Index] = '"'
+				copy(jbytes[res.Index+1:], []byte(raw))
+				jbytes[res.Index+1+len(raw)] = '"'
+				copy(jbytes[res.Index+1+len(raw)+1:],
+					jbytes[res.Index+len(res.Raw):])
+			} else {
+				copy(jbytes[res.Index:], []byte(raw))
+				copy(jbytes[res.Index+len(raw):],
+					jbytes[res.Index+len(res.Raw):])
+			}
+			return jbytes, nil
+		}
+		return []byte(jstr), nil
+	}
+	buf := make([]byte, 0, sz)
+	buf = append(buf, jstr[:res.Index]...)
+	if stringify {
+		buf = appendStringify(buf, raw)
+	} else {
+		buf = append(buf, raw...)
+	}
+	buf = append(buf, jstr[res.Index+len(res.Raw):]...)
+	return buf, nil
+}
+
+func setManyByGetResult(jstr string, raws []interface{}, valueDiff int, ress []gjson.Result, inplace bool) ([]byte, error) {
+	var stringifiedCount int
+
+	stringified := make([]bool, len(raws))
+
+	for i, r := range raws {
+		switch r.(type) {
+		case string:
+			stringified[i] = true
+			stringifiedCount += 1
+		default:
+			stringified[i] = false
+		}
+	}
+
+	valueDiff += 2 * stringifiedCount
+	blen := len(jstr) + valueDiff
+
+	var buf = make([]byte, len(jstr))
+	copy(buf, jstr)
+	if !inplace {
+		return nil, fmt.Errorf("not supported if replace is not inplace")
+	}
+	jsonh := *(*stringHeader)(unsafe.Pointer(&jstr))
+	jsonbh := sliceHeader{
+		data: jsonh.data, len: blen, cap: blen}
+	jbytes := *(*[]byte)(unsafe.Pointer(&jsonbh))
+	var rwb []byte
+	var diff int
+	for i := 0; i < len(ress); i++ {
+		raw := raws[i]
+		res := ress[i]
+		rwb = getBytes(raw)
+		var currentSz int
+
+		currentSz = len(rwb) - len(res.Raw)
+
+		stringify := stringified[i]
+		if stringify {
+			currentSz += 2
+
+			jbytes[res.Index+diff] = '"'
+			copy(jbytes[res.Index+1+diff:], rwb) // 1 index
+			jbytes[res.Index+1+len(rwb)+diff] = '"'
+			if i+1 < len(ress) {
+				copy(jbytes[res.Index+1+len(rwb)+1+diff:],
+					buf[res.Index+len(res.Raw):ress[i+1].Index]) // next index, copy from index + len + till next index
+			} else {
+				copy(jbytes[res.Index+1+len(rwb)+1+diff:], // last index
+					buf[res.Index+len(res.Raw):])
+			}
+			diff += currentSz
+		} else {
+			copy(jbytes[res.Index+diff:], rwb) // 1 index
+			if i+1 < len(ress) {
+				copy(jbytes[res.Index+len(rwb)+diff:],
+					buf[res.Index+len(res.Raw):ress[i+1].Index]) // next index, copy from index + len + till next index
+			} else {
+				copy(jbytes[res.Index+len(rwb)+diff:], // last index
+					buf[res.Index+len(res.Raw):])
+			}
+			diff += currentSz
+		}
+	}
+	return jbytes, nil
 }
 
 func set(jstr, path, raw string,
@@ -654,6 +760,111 @@ func SetOptions(json, path string, value interface{},
 	jsonb := *(*[]byte)(unsafe.Pointer(&jsonbh))
 	res, err := SetBytesOptions(jsonb, path, value, opts)
 	return string(res), err
+}
+
+// SetBytesOptionsByGetResult - if you have already gotten the result, no need to get it in set again
+func SetBytesOptionsByGetResult(json []byte, getResult gjson.Result, value interface{},
+	opts *Options) ([]byte, error) {
+	var optimistic, inplace bool
+	if opts != nil {
+		optimistic = opts.Optimistic
+		inplace = opts.ReplaceInPlace
+	}
+	jstr := *(*string)(unsafe.Pointer(&json))
+	var res []byte
+	var err error
+	switch v := value.(type) {
+	default:
+		b, merr := jsongo.Marshal(value)
+		if merr != nil {
+			return nil, merr
+		}
+		raw := *(*string)(unsafe.Pointer(&b))
+		res, err = setByGetResult(jstr, raw, getResult, false, false, optimistic, inplace)
+	case dtype:
+		res, err = setByGetResult(jstr, "", getResult, false, true, optimistic, inplace)
+	case string:
+		res, err = setByGetResult(jstr, v, getResult, true, false, optimistic, inplace)
+	case []byte:
+		raw := *(*string)(unsafe.Pointer(&v))
+		res, err = setByGetResult(jstr, raw, getResult, true, false, optimistic, inplace)
+	case bool:
+		if v {
+			res, err = setByGetResult(jstr, "true", getResult, false, false, optimistic, inplace)
+		} else {
+			res, err = setByGetResult(jstr, "false", getResult, false, false, optimistic, inplace)
+		}
+	case int8:
+		res, err = setByGetResult(jstr, strconv.FormatInt(int64(v), 10), getResult,
+			false, false, optimistic, inplace)
+	case int16:
+		res, err = setByGetResult(jstr, strconv.FormatInt(int64(v), 10), getResult,
+			false, false, optimistic, inplace)
+	case int32:
+		res, err = setByGetResult(jstr, strconv.FormatInt(int64(v), 10), getResult,
+			false, false, optimistic, inplace)
+	case int64:
+		res, err = setByGetResult(jstr, strconv.FormatInt(int64(v), 10), getResult,
+			false, false, optimistic, inplace)
+	case uint8:
+		res, err = setByGetResult(jstr, strconv.FormatUint(uint64(v), 10), getResult,
+			false, false, optimistic, inplace)
+	case uint16:
+		res, err = setByGetResult(jstr, strconv.FormatUint(uint64(v), 10), getResult,
+			false, false, optimistic, inplace)
+	case uint32:
+		res, err = setByGetResult(jstr, strconv.FormatUint(uint64(v), 10), getResult,
+			false, false, optimistic, inplace)
+	case uint64:
+		res, err = setByGetResult(jstr, strconv.FormatUint(uint64(v), 10), getResult,
+			false, false, optimistic, inplace)
+	case float32:
+		res, err = setByGetResult(jstr, strconv.FormatFloat(float64(v), 'f', -1, 64), getResult,
+			false, false, optimistic, inplace)
+	case float64:
+		res, err = setByGetResult(jstr, strconv.FormatFloat(float64(v), 'f', -1, 64), getResult,
+			false, false, optimistic, inplace)
+	}
+	if err == errNoChange {
+		return json, nil
+	}
+	return res, err
+}
+
+func SetBytesOptionsManyByGetResult(json []byte, getResult []gjson.Result, values []interface{},
+	opts *Options) ([]byte, error) {
+	var inplace bool
+	if opts != nil {
+		inplace = opts.ReplaceInPlace
+	}
+	jstr := *(*string)(unsafe.Pointer(&json))
+	var res []byte
+	var err error
+
+	var valueDiff int
+	for i := 0; i < len(getResult); i++ {
+		if values[i] == nil {
+			return nil, fmt.Errorf("nil value appeared in replacement array that matches [%v] value from original payload", getResult[i].Value())
+		}
+
+		v, ok := values[i].(string)
+		if !ok {
+			v = fmt.Sprintf("%v", values[i])
+		}
+
+		valueDiff += len(v) - len(getResult[i].Raw)
+	}
+
+	res, err = setManyByGetResult(jstr, values, valueDiff, getResult, inplace)
+
+	if err == errNoChange {
+		return json, nil
+	}
+	return res, err
+}
+
+func getBytes(v interface{}) []byte {
+	return []byte(fmt.Sprintf("%v", v))
 }
 
 // SetBytesOptions sets a json value for the specified path with options.
