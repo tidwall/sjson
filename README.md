@@ -165,7 +165,25 @@ value, _ := sjson.Set(`{"friends":["Andy","Carol"]}`, "friends.2", "Sara")
 println(value)
 
 // Output:
-// {"friends":["Andy","Carol","Sara"]
+// {"friends":["Andy","Carol","Sara"]}
+```
+
+Update existing value in array:
+```go
+value, _ := sjson.Set(`{"friends":["Andy","Carol"]}`, "friends.1", "Sara")
+println(value)    
+
+// Output:
+// {"friends":["Andy","Sara"]}
+```
+
+Update all existing values in array:
+```go
+value, _ := sjson.Set(`{"friends":["Andy","Carol"]}`, "friends.#()#", "Sara")
+println(value)
+
+// Output:
+// {"friends":["Sara","Sara"]}
 ```
 
 Append an array value by using the `-1` key in a path:
@@ -174,7 +192,7 @@ value, _ := sjson.Set(`{"friends":["Andy","Carol"]}`, "friends.-1", "Sara")
 println(value)
 
 // Output:
-// {"friends":["Andy","Carol","Sara"]
+// {"friends":["Andy","Carol","Sara"]}
 ```
 
 Append an array value that is past the end:
@@ -183,7 +201,7 @@ value, _ := sjson.Set(`{"friends":["Andy","Carol"]}`, "friends.4", "Sara")
 println(value)
 
 // Output:
-// {"friends":["Andy","Carol",null,null,"Sara"]
+// {"friends":["Andy","Carol",null,null,"Sara"]}
 ```
 
 Delete a value:
