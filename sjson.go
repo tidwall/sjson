@@ -2,6 +2,7 @@
 package sjson
 
 import (
+	"bytes"
 	jsongo "encoding/json"
 	"sort"
 	"strconv"
@@ -123,7 +124,7 @@ func mustMarshalString(s string) bool {
 // appendStringify makes a json string and appends to buf.
 func appendStringify(buf []byte, s string) []byte {
 	if mustMarshalString(s) {
-		b, _ := jsongo.Marshal(s)
+		b, _ := marshal(s)
 		return append(buf, b...)
 	}
 	buf = append(buf, '"')
@@ -671,7 +672,7 @@ func SetBytesOptions(json []byte, path string, value interface{},
 	var err error
 	switch v := value.(type) {
 	default:
-		b, merr := jsongo.Marshal(value)
+		b, merr := marshal(value)
 		if merr != nil {
 			return nil, merr
 		}
@@ -744,4 +745,15 @@ func SetRawBytesOptions(json []byte, path string, value []byte,
 		return json, nil
 	}
 	return res, err
+}
+
+func marshal(v interface{}) ([]byte, error) {
+	var buffer bytes.Buffer
+	encoder := jsongo.NewEncoder(&buffer)
+	encoder.SetEscapeHTML(false)
+	err := encoder.Encode(v)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.TrimSpace(buffer.Bytes()), nil
 }

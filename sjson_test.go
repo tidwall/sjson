@@ -351,3 +351,11 @@ func TestIssue61(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestIssue71(t *testing.T) {
+	expected := `{"data":"{\"text\":\"<p>test</p>\"}"}`
+	got, _ := Set(``, "data", `{"text":"<p>test</p>"}`)
+	if expected != got {
+		t.Fatalf("expected '%v', got '%v'", expected, got)
+	}
+}
