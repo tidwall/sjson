@@ -376,3 +376,10 @@ func TestIssue97(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestIssue77(t *testing.T) {
+	value, err := Delete(`{"":"1","1":"2"}`, "")
+	if value != `{"1":"2"}` || err != nil {
+		t.FailNow()
+	}
+}

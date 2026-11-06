@@ -514,9 +514,6 @@ type sliceHeader struct {
 
 func set(jstr, path, raw string,
 	stringify, del, optimistic, inplace bool) ([]byte, error) {
-	if path == "" {
-		return []byte(jstr), &errorType{"path cannot be empty"}
-	}
 	if !del && optimistic && isOptimisticPath(path) {
 		res := gjson.Get(jstr, path)
 		if res.Exists() && res.Index > 0 {
