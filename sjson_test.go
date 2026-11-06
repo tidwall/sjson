@@ -3,6 +3,7 @@ package sjson
 import (
 	"encoding/hex"
 	"fmt"
+	"math"
 	"math/rand"
 	"testing"
 	"time"
@@ -349,5 +350,29 @@ func TestIssue61(t *testing.T) {
 	json1, _ := Set(json, "@context.@vocab", "newval")
 	if gjson.Get(json1, "@context.@vocab").String() != "newval" {
 		t.Fail()
+	}
+}
+
+func TestIssue97(t *testing.T) {
+	json, err := Set(`{"rate":0}`, "rate", math.NaN())
+	if err == nil {
+		t.FailNow()
+	}
+	if json != `{"rate":"NaN"}` {
+		t.FailNow()
+	}
+	json, err = Set(`{"rate":0}`, "rate", math.Inf(-1))
+	if err == nil {
+		t.FailNow()
+	}
+	if json != `{"rate":"-Inf"}` {
+		t.FailNow()
+	}
+	json, err = Set(`{"rate":0}`, "rate", math.Inf(0))
+	if err == nil {
+		t.FailNow()
+	}
+	if json != `{"rate":"+Inf"}` {
+		t.FailNow()
 	}
 }
