@@ -383,3 +383,51 @@ func TestIssue77(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestIssue98(t *testing.T) {
+	// 2^64 wraps to 0 -> [4,2,3]? appends at a wrapped index, returns [1,2,3,4]
+	json, err := Set(`[1,2,3]`, "18446744073709551616", 4)
+	if json != "[1,2,3]" || err == nil {
+		t.FailNow()
+	}
+	if err.Error() != "cannot set array element for non-numeric key '18446744073709551616'" {
+		t.FailNow()
+	}
+	json, err = Set(`[1,2,3]`, "100001", 4)
+	if err != nil {
+		t.FailNow()
+	}
+	json, err = Set(`[1,2,3]`, "100003", 4)
+	if err != nil {
+		t.FailNow()
+	}
+	json, err = Set(`[1,2,3]`, "100004", 4)
+	if json != "[1,2,3]" || err == nil {
+		t.FailNow()
+	}
+	if err.Error() != "cannot pad array for key '100004', has 3 elements, limit is 100000" {
+		t.FailNow()
+	}
+
+	json, err = Set("", "b.this.4", "5")
+	if json != `{"b":{"this":[null,null,null,null,"5"]}}` || err != nil {
+		t.FailNow()
+	}
+	json, err = Set("", "b.this.100001", "5")
+	if json != "" || err == nil {
+		t.FailNow()
+	}
+	if err.Error() != "cannot pad array for key '100001', has 0 elements, limit is 100000" {
+		t.FailNow()
+	}
+	json, err = Set("", "b.this.18446744073709551616", "5")
+	if json != `{"b":{"this":{"18446744073709551616":"5"}}}` {
+		t.FailNow()
+	}
+
+	// testRaw(t, setRaw,
+	// 	`{"b":{"this":[null,null,null,null,4]}}`,
+	// 	``,
+	// 	"b.this.4", `4`)
+
+}
