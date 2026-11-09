@@ -281,7 +281,8 @@ func appendRawPaths(buf []byte, jstr string, paths []pathResult, raw string,
 	var res gjson.Result
 	var found bool
 	if del {
-		if paths[0].part == "-1" && !paths[0].force {
+		if paths[0].part == "-1" && !paths[0].force &&
+			gjson.Parse(jstr).IsArray() {
 			res = gjson.Get(jstr, "#")
 			if res.Int() > 0 {
 				res = gjson.Get(jstr, strconv.FormatInt(int64(res.Int()-1), 10))

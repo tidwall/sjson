@@ -431,3 +431,10 @@ func TestIssue98(t *testing.T) {
 	// 	"b.this.4", `4`)
 
 }
+
+func TestIssue99(t *testing.T) {
+	json, err := Delete(`{"#":200,"-1":true}`, "-1")
+	if json != `{"#":200}` || err != nil {
+		t.FailNow()
+	}
+}
