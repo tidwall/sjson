@@ -438,3 +438,38 @@ func TestIssue99(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestIssue100(t *testing.T) {
+	out, err := Delete(`{"\"":[0,1]}`, `"`)
+	if out != `{}` || err != nil {
+		t.FailNow()
+	}
+	out, err = Delete(`{"\"":[0,1]}`, `".1`)
+	if out != `{"\"":[0]}` || err != nil {
+		t.FailNow()
+	}
+	out, err = Delete(`[1,{"\"":[0,1]}]`, `1."`)
+	if out != `[1,{}]` || err != nil {
+		t.FailNow()
+	}
+	out, err = Delete(`[1,{"1\"":[0,1]}]`, `1.1"`)
+	if out != `[1,{}]` || err != nil {
+		t.FailNow()
+	}
+	out, err = Delete(`[1,{"\"1":[0,1]}]`, `1."1`)
+	if out != `[1,{}]` || err != nil {
+		t.FailNow()
+	}
+	out, err = Delete(`[1,{"\"1\"":[0,1]}]`, `1."1"`)
+	if out != `[1,{}]` || err != nil {
+		t.FailNow()
+	}
+	out, err = Delete(`[1,{"\\\"1\"":[0,1]}]`, `1.\\"1"`)
+	if out != `[1,{}]` || err != nil {
+		t.FailNow()
+	}
+	out, err = Delete(`[1,{"A\\\"1\"":[0,1]}]`, `1.A\\"1"`)
+	if out != `[1,{}]` || err != nil {
+		t.FailNow()
+	}
+}
