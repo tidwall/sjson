@@ -3,7 +3,7 @@ module github.com/tidwall/sjson
 go 1.23
 
 require (
-	github.com/tidwall/gjson v1.20.4
+	github.com/tidwall/gjson v1.20.5
 	github.com/tidwall/pretty v1.3.0
 )
 
